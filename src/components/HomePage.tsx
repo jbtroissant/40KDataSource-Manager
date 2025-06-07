@@ -28,7 +28,6 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { Army } from '../types/army';
-import FactionSelector from './FactionSelector';
 import AppLayout from './AppLayout';
 import { calculateTotalPoints } from '../utils/pointsCalculator';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -113,21 +112,19 @@ const factionImages: { [key: string]: string } = {
 
 const HomePage: React.FC = () => {
   const [armies, setArmies] = useState<Army[]>([]);
+  const [factions, setFactions] = useState<Faction[]>([]);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedArmy, setSelectedArmy] = useState<Army | null>(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editName, setEditName] = useState('');
-  const [openFactionSelector, setOpenFactionSelector] = useState(false);
+  const [flippedArmyId, setFlippedArmyId] = useState<string | null>(null);
   const [showCombinedUnitsDialog, setShowCombinedUnitsDialog] = useState(false);
   const [selectedArmyForEdit, setSelectedArmyForEdit] = useState<Army | null>(null);
-  const [flippedArmyId, setFlippedArmyId] = useState<string | null>(null);
-  const [factions, setFactions] = useState<Faction[]>([]);
-  const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
   const [armyRulesOpen, setArmyRulesOpen] = useState(false);
-  const navigate = useNavigate();
+  const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
   const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
   const translate = useTranslate();
 
   useEffect(() => {
@@ -189,12 +186,8 @@ const HomePage: React.FC = () => {
   }, []);
 
   const handleCreateClick = () => {
-    setOpenFactionSelector(true);
-  };
-
-  const handleFactionSelect = (factionId: string) => {
-    setOpenFactionSelector(false);
-    // La redirection vers ArmyBuilder se fait dans le FactionSelector
+    // Rediriger directement vers ArmyBuilder avec l'ID de la faction
+    navigate('/army-builder/new');
   };
 
   const handleDeleteClick = (army: Army) => (event: React.MouseEvent) => {
@@ -312,8 +305,7 @@ const HomePage: React.FC = () => {
   const handleFactionClick = (factionId: string) => {
     const faction = findFactionById(factionId, factions);
     if (faction) {
-      setSelectedFaction(faction);
-      setOpenFactionSelector(true);
+      navigate(`/army-builder/${factionId}`);
     }
   };
 
@@ -502,12 +494,6 @@ const HomePage: React.FC = () => {
       }}>
         {renderFactionSection()}
       </Box>
-
-      <FactionSelector
-        open={openFactionSelector}
-        onClose={() => setOpenFactionSelector(false)}
-        onSelect={handleFactionSelect}
-      />
 
       <FactionRules 
         open={armyRulesOpen}

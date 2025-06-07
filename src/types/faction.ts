@@ -1,3 +1,5 @@
+import { Datasheet } from './datasheet';
+
 export interface Faction {
   id: string;
   name: string;
@@ -5,4 +7,5 @@ export interface Faction {
   parent_faction_id?: string;
   description?: string;
   logo_url?: string;
+  datasheets?: Datasheet[];
 } 

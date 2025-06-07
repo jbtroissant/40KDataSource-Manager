@@ -23,7 +23,6 @@ import {
 import { Datasheet } from '../../types/datasheet';
 import { useTheme } from '@mui/material/styles';
 import { ArmyRule } from '../../types/army';
-import AddDatasheetToArmy from './AddDatasheetToArmy';
 import { loadDatasource } from '../../utils/datasourceDb';
 import UnitCard from '../UnitView/UnitCard';
 import { useTranslate } from '../../services/translationService';
@@ -245,9 +244,6 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
               <React.Fragment key={datasheet.id}>
                 <ListItem
                   disablePadding
-                  secondaryAction={
-                    renderAddButton(datasheet)
-                  }
                   sx={{
                     mb: 1,
                     borderRadius: 1,
@@ -609,20 +605,6 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
     setFilteredDatasheets(filtered);
   }, [searchTerm, datasheets, showLegends]);
 
-  const renderAddButton = (datasheet: Datasheet) => {
-    return (
-      <AddDatasheetToArmy 
-        datasheet={datasheet} 
-        factionColors={{
-          banner: theme.palette.primary.main,
-          header: theme.palette.primary.dark
-        }}
-        detachment={detachment}
-        onUnitAdded={onUnitAdded}
-        isSelected={selectedItem && selectedItem.type === 'datasheet' && selectedItem.id === datasheet.id}
-      />
-    );
-  };
 
   const handleDatasheetClick = (datasheet: Datasheet) => {
     if (isMobile) {

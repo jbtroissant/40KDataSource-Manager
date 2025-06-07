@@ -1,10 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import { useThemeMode } from './hooks/useThemeMode';
 import { Army } from './types/army';
 import HomePage from './components/HomePage';
-import ArmyBuilder from './components/army-builder/ArmyBuilder';
 import clearBackground from './assets/images/clearBackground.png';
 import darkBackground from './assets/images/darkBackground.jpg';
 import { Datasheet } from './types/datasheet';
@@ -83,7 +82,6 @@ function App() {
               <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
-                  <Route path="/army-builder/:armyId" element={<ArmyBuilder />} />
                 </Routes>
               </Router>
             </Box>

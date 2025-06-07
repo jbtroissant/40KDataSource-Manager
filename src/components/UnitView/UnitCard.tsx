@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, Tooltip, Dialog, useTheme } from '@mui/material';
+import { Box, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import { loadDatasource } from '../../utils/datasourceDb';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useParams } from 'react-router-dom';
-import AddDatasheetToArmy from '../army-builder/AddDatasheetToArmy';
-import DatasheetArmyOption from '../army-builder/DatasheetArmyOption';
 import UnitHeader from './UnitHeader';
 import UnitContent from './UnitContent';
 import UnitFooter from './UnitFooter';
@@ -34,7 +32,6 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const { armyId } = useParams<{ armyId: string }>();
-  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [detachment, setDetachment] = useState<any>(null);
 
@@ -85,10 +82,6 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
     setRefreshKey(prev => prev + 1);
-  };
-
-  const handleOptionsDialogClose = () => {
-    setOptionsDialogOpen(false);
   };
 
   if (!unit) {
@@ -146,25 +139,11 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
           zIndex: 10
         }}>
           <Box sx={{ position: 'absolute', right: 8, top: 8, height: '28px', display: 'flex', gap: 1, alignItems: 'center' }}>
-            {/* Mode normal (pas de bataille) et pas depuis ArmyList */}
-            {!isBattleMode && !isFromArmyList && (
-              <Box sx={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <AddDatasheetToArmy 
-                  datasheet={unit}
-                  factionColors={{
-                    banner: theme.palette.primary.main,
-                    header: theme.palette.primary.dark
-                  }}
-                  detachment={detachment}
-                  onUnitAdded={onUnitAdded}
-                />
-              </Box>
-            )}
             {/* Mode normal (pas de bataille) et depuis ArmyList */}
             {!isBattleMode && isFromArmyList && (
               <Tooltip title="Options">
                 <IconButton
-                  onClick={() => setOptionsDialogOpen(true)}
+                  onClick={onOptionsClick}
                   sx={{
                     color: 'primary.main',
                     width: '28px',
@@ -214,38 +193,6 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
             </Tooltip>
           </Box>
         </Box>
-
-        {/* Dialog pour les options de l'unité (ArmyList) */}
-        {!isBattleMode && isFromArmyList && (
-          <Dialog
-            open={optionsDialogOpen}
-            onClose={handleOptionsDialogClose}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 2,
-                overflow: 'hidden',
-                bgcolor: 'background.paper',
-                maxHeight: '90vh',
-                display: 'flex',
-                flexDirection: 'column',
-              }
-            }}
-          >
-            <DatasheetArmyOption 
-              datasheet={unit} 
-              factionColors={factionColors}
-              onUnitUpdated={() => {
-                if (onUnitUpdated) {
-                  onUnitUpdated();
-                }
-                handleOptionsDialogClose();
-              }}
-              onUnitRemoved={onBack}
-            />
-          </Dialog>
-        )}
 
         <UnitHeader
           datasheet={unit} 
