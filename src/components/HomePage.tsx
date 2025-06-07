@@ -303,10 +303,7 @@ const HomePage: React.FC = () => {
   };
 
   const handleFactionClick = (factionId: string) => {
-    const faction = findFactionById(factionId, factions);
-    if (faction) {
-      navigate(`/army-builder/${factionId}`);
-    }
+    navigate(`/faction/${factionId}`);
   };
 
   const findFactionById = (id: string, factionList: Faction[]): Faction | null => {

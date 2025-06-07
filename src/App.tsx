@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import { useThemeMode } from './hooks/useThemeMode';
 import { Army } from './types/army';
 import HomePage from './components/HomePage';
+import FactionView from './components/FactionView';
 import clearBackground from './assets/images/clearBackground.png';
 import darkBackground from './assets/images/darkBackground.jpg';
 import { Datasheet } from './types/datasheet';
@@ -82,6 +83,7 @@ function App() {
               <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
+                  <Route path="/faction/:factionId" element={<FactionView />} />
                 </Routes>
               </Router>
             </Box>
