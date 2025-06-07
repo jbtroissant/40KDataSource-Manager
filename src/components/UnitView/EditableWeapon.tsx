@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, useTheme, useMediaQuery, Checkbox, Chip } from '@mui/material';
 import { Weapon } from '../../types/weapon';
-import StatEditPopup from './StatEditPopup';
+import StatEditPopup from '../CoreComponents/StatEditPopup';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import { useTranslate } from '../../services/translationService';

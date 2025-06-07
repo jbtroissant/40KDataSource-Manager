@@ -3,7 +3,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Datasheet } from '../../types/datasheet';
 import { TextFormatService } from '../../services/textFormatService';
-import EditableWeapon from '../CoreComponents/EditableWeapon';
+import EditableWeapon from './EditableWeapon';
 import { useTranslate } from '../../services/translationService';
 
 interface SectionHeaderProps {

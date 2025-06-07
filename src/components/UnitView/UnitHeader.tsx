@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, useTheme, Popover, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { Datasheet, LinkedUnit } from '../../types/datasheet';
-import EditableStats from '../BattleView/EditableStats';
+import EditableStats from './EditableStats';
 import { useParams } from 'react-router-dom';
 import UnitStatus from '../CoreComponents/UnitStatus';
 import { useTranslate } from '../../services/translationService';
