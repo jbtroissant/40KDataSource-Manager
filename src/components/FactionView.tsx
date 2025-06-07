@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, useTheme, useMediaQuery, Button, Stack } from '@mui/material';
+import { Box, useTheme, useMediaQuery, Button, Stack, Typography } from '@mui/material';
 import DatasheetList from './CoreComponents/DatasheetList';
 import UnitCard from './UnitView/UnitCard';
 import FactionRules from './FactionRules';
@@ -8,6 +8,7 @@ import DetachmentDetails from './DetachmentDetails';
 import { Datasheet } from '../types/datasheet';
 import { useParams } from 'react-router-dom';
 import { loadDatasource } from '../utils/datasourceDb';
+import { useTranslate } from '../services/translationService';
 
 const FactionView: React.FC = () => {
   const [selectedDatasheet, setSelectedDatasheet] = useState<Datasheet | null>(null);
@@ -20,6 +21,7 @@ const FactionView: React.FC = () => {
   const { factionId } = useParams<{ factionId: string }>();
   const [factionName, setFactionName] = useState<string>('');
   const [factionIconUrl, setFactionIconUrl] = useState<string>('');
+  const translate = useTranslate();
 
   React.useEffect(() => {
     const loadFactionData = async () => {
@@ -66,25 +68,16 @@ const FactionView: React.FC = () => {
         flexDirection: 'column'
       }}>
         {/* Boutons d'action */}
-        <Stack direction="row" spacing={1} sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setFactionRulesOpen(true)}
-            sx={{ flex: 1 }}
-          >
-            Règles d'armée
-          </Button>
-          {selectedDetachment ? (
+        <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+          <Stack direction="row" spacing={1} sx={{ mb: 1 }}>
             <Button
               variant="outlined"
               size="small"
-              onClick={() => setDetachmentDetailsOpen(true)}
+              onClick={() => setFactionRulesOpen(true)}
               sx={{ flex: 1 }}
             >
-              Modifier détachement
+              Règles d'armée
             </Button>
-          ) : (
             <Button
               variant="outlined"
               size="small"
@@ -93,8 +86,39 @@ const FactionView: React.FC = () => {
             >
               Choisir détachement
             </Button>
+          </Stack>
+
+          {selectedDetachment && (
+            <Box 
+              sx={{ 
+                mt: 1,
+                p: 1,
+                borderRadius: 1,
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                border: `1px solid ${theme.palette.divider}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Détachement sélectionné
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => setDetachmentDetailsOpen(true)}
+                  sx={{ minWidth: 'auto', p: 0.5 }}
+                >
+                  Modifier
+                </Button>
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {translate(selectedDetachment.name, factionId || '')}
+              </Typography>
+            </Box>
           )}
-        </Stack>
+        </Box>
 
         <DatasheetList
           factionId={factionId || ''}

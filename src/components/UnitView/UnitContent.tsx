@@ -175,43 +175,39 @@ const UnitContent: React.FC<UnitContentProps> = ({
           }}
         >
           {/* Armes à distance */}
-          {rangedWeapons && rangedWeapons.length > 0 && (
-            <EditableWeapon 
-              weapons={rangedWeapons} 
-              factionColors={factionColors} 
-              isRanged={true} 
-              unitId={datasheet.id}
-              armyId={armyId}
-              onWeaponsChange={handleWeaponsChange}
-              isBattleMode={isBattleMode}
-              isFromArmyList={isFromArmyList}
-              factionId={datasheet.faction_id}
-            />
-          )}
+          <EditableWeapon 
+            weapons={rangedWeapons || []} 
+            factionColors={factionColors} 
+            isRanged={true} 
+            unitId={datasheet.id}
+            armyId={armyId}
+            onWeaponsChange={handleWeaponsChange}
+            isBattleMode={isBattleMode}
+            isFromArmyList={isFromArmyList}
+            factionId={datasheet.faction_id}
+          />
 
           {/* Armes de mêlée */}
-          {meleeWeapons && meleeWeapons.length > 0 && (
-            <EditableWeapon 
-              weapons={meleeWeapons} 
-              factionColors={factionColors} 
-              isRanged={false} 
-              unitId={datasheet.id}
-              armyId={armyId}
-              onWeaponsChange={handleWeaponsChange}
-              isBattleMode={isBattleMode}
-              isFromArmyList={isFromArmyList}
-              factionId={datasheet.faction_id}
-            />
-          )}
+          <EditableWeapon 
+            weapons={meleeWeapons || []} 
+            factionColors={factionColors} 
+            isRanged={false} 
+            unitId={datasheet.id}
+            armyId={armyId}
+            onWeaponsChange={handleWeaponsChange}
+            isBattleMode={isBattleMode}
+            isFromArmyList={isFromArmyList}
+            factionId={datasheet.faction_id}
+          />
 
           {/* Primarch Section */}
-          {datasheet.abilities && datasheet.abilities.primarch && datasheet.abilities.primarch.length > 0 && datasheet.abilities.primarch[0].abilities && (
-            <Box>
-              <SectionHeader 
-                title={translate(datasheet.abilities.primarch[0].name, datasheet.faction_id)}
-                factionColors={factionColors}
-              >
-                {datasheet.abilities.primarch[0].abilities.map((ability, index) => (
+          <Box>
+            <SectionHeader 
+              title={translate(datasheet.abilities?.primarch?.[0]?.name || "Primarque", datasheet.faction_id)}
+              factionColors={factionColors}
+            >
+              {datasheet.abilities?.primarch?.[0]?.abilities ? (
+                datasheet.abilities.primarch[0].abilities.map((ability, index) => (
                   <Box key={index} sx={{ mb: 1 }}>
                     <Typography sx={{ 
                       color: isDarkMode ? '#e0e0e0' : 'black' 
@@ -219,75 +215,93 @@ const UnitContent: React.FC<UnitContentProps> = ({
                       <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {translate(ability.description, datasheet.faction_id)}
                     </Typography>
                   </Box>
-                ))}
-              </SectionHeader>
-            </Box>
-          )}
+                ))
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune capacité de primarque
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Wargear Options */}
-          {datasheet.wargear && datasheet.wargear.length > 0 && (
-            <Box>
-              <SectionHeader 
-                title="OPTIONS D'ÉQUIPEMENT"
-                factionColors={factionColors}
-              >
-                {TextFormatService.formatTextWithTwoColumnOptionsList(
+          <Box>
+            <SectionHeader 
+              title="OPTIONS D'ÉQUIPEMENT"
+              factionColors={factionColors}
+            >
+              {datasheet.wargear && datasheet.wargear.length > 0 ? (
+                TextFormatService.formatTextWithTwoColumnOptionsList(
                   datasheet.wargear.map(w => translate(w, datasheet.faction_id)).join('■')
-                )}
-              </SectionHeader>
-            </Box>
-          )}
+                )
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune option d'équipement disponible
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Unit Composition */}
-          {datasheet.composition && datasheet.composition.length > 0 && (
-            <Box>
-              <SectionHeader 
-                title="COMPOSITION DE L'UNITÉ"
-                factionColors={factionColors}
-              >
-                <Typography sx={{ 
-                  color: isDarkMode ? '#e0e0e0' : 'black', 
-                  fontSize: '0.85rem' 
-                }}>
-                  {TextFormatService.formatTextWithLineBreaksList(datasheet.composition.map(a => translate(a, datasheet.faction_id)).join('■'))}
-                </Typography>
-                {datasheet.loadout && (
+          <Box>
+            <SectionHeader 
+              title="COMPOSITION DE L'UNITÉ"
+              factionColors={factionColors}
+            >
+              {datasheet.composition && datasheet.composition.length > 0 ? (
+                <>
                   <Typography sx={{ 
                     color: isDarkMode ? '#e0e0e0' : 'black', 
                     fontSize: '0.85rem' 
                   }}>
-                    {translate(datasheet.loadout, datasheet.faction_id)}
+                    {TextFormatService.formatTextWithLineBreaksList(datasheet.composition.map(a => translate(a, datasheet.faction_id)).join('■'))}
                   </Typography>
-                )}
-              </SectionHeader>
-            </Box>
-          )}
+                  {datasheet.loadout && (
+                    <Typography sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black', 
+                      fontSize: '0.85rem' 
+                    }}>
+                      {translate(datasheet.loadout, datasheet.faction_id)}
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune information sur la composition
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Leader */}
-          {datasheet.leader && (
-            <Box>
-              <SectionHeader 
-                title="MENEUR"
-                factionColors={factionColors}
-              >
-                {TextFormatService.formatTextWithLineBreaksList(translate(datasheet.leader, datasheet.faction_id))}
-              </SectionHeader>
-            </Box>
-          )}
+          <Box>
+            <SectionHeader 
+              title="MENEUR"
+              factionColors={factionColors}
+            >
+              {datasheet.leader ? (
+                TextFormatService.formatTextWithLineBreaksList(translate(datasheet.leader, datasheet.faction_id))
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucun meneur spécifié
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Lead By */}
-          {datasheet.leadBy && (
-            <Box>
-              <SectionHeader 
-                title="Mené par"
-                factionColors={factionColors}
-              >
+          <Box>
+            <SectionHeader 
+              title="Mené par"
+              factionColors={factionColors}
+            >
+              {datasheet.leadBy && datasheet.leadBy.length > 0 ? (
                 <Box sx={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(2, 1fr)',
                   gap: 0.5,
                 }}>
-                  {datasheet.leadBy?.map((item, index) => (
+                  {datasheet.leadBy.map((item, index) => (
                     <Box
                       key={index}
                       sx={{
@@ -308,21 +322,29 @@ const UnitContent: React.FC<UnitContentProps> = ({
                     </Box>
                   ))}
                 </Box>
-              </SectionHeader>
-            </Box>
-          )}
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune unité menée
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Transport Section */}
-          {datasheet.transport && (
-            <Box>
-              <SectionHeader 
-                title="TRANSPORT"
-                factionColors={factionColors}
-              >
-                {TextFormatService.formatTextWithLineBreaksList(translate(datasheet.transport, datasheet.faction_id))}
-              </SectionHeader>
-            </Box>
-          )}
+          <Box>
+            <SectionHeader 
+              title="TRANSPORT"
+              factionColors={factionColors}
+            >
+              {datasheet.transport ? (
+                TextFormatService.formatTextWithLineBreaksList(translate(datasheet.transport, datasheet.faction_id))
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune capacité de transport
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
         </Box>
 
         {/* Section des capacités */}
@@ -339,103 +361,136 @@ const UnitContent: React.FC<UnitContentProps> = ({
               title="APTITUDES"
               factionColors={factionColors}
             >
-              {datasheet.abilities && datasheet.abilities.core && datasheet.abilities.core.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold' }}>BASE:</Box> {formatText(datasheet.abilities.core.map(a => translate(a, datasheet.faction_id)).join(', '))}
-                </Box>
+              {datasheet.abilities && (
+                <>
+                  {datasheet.abilities.core && datasheet.abilities.core.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box component="span" sx={{ fontWeight: 'bold' }}>BASE:</Box> {formatText(datasheet.abilities.core.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                    </Box>
+                  )}
+                  {datasheet.abilities.faction && datasheet.abilities.faction.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box component="span" sx={{ fontWeight: 'bold', mb: 1 }}>FACTION:</Box> {formatText(datasheet.abilities.faction.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                    </Box>
+                  )}
+                  {datasheet.abilities.other && datasheet.abilities.other.length > 0 ? (
+                    datasheet.abilities.other.map((ability, index) => (
+                      <Box key={`ability-${index}`} sx={{ mb: 1 }}>
+                        <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {formatText(translate(ability.description, datasheet.faction_id))}
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                      Aucune aptitude supplémentaire
+                    </Typography>
+                  )}
+                </>
               )}
-              {datasheet.abilities && datasheet.abilities.faction && datasheet.abilities.faction.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold', mb: 1 }}>FACTION:</Box> {formatText(datasheet.abilities.faction.map(a => translate(a, datasheet.faction_id)).join(', '))}
-                </Box>
-              )}
-              {datasheet.abilities && datasheet.abilities.other && datasheet.abilities.other.map((ability, index) => (
-                <Box key={`ability-${index}`} sx={{ mb: 1 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {formatText(translate(ability.description, datasheet.faction_id))}
-                </Box>
-              ))}
             </SectionHeader>
           </Box>
 
           {/* Special Abilities Sections */}
-          {datasheet.abilities && datasheet.abilities.special && datasheet.abilities.special.map((specialAbility, index) => (
-            specialAbility.showAbility && (
-              <Box key={`special-${index}`}>
-                <SectionHeader 
-                  title={translate(specialAbility.name, datasheet.faction_id)}
-                  factionColors={factionColors}
-                >
-                  <Typography sx={{ 
-                    color: isDarkMode ? '#e0e0e0' : 'black',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.2
-                  }}>
-                    {translate(specialAbility.description, datasheet.faction_id)}
-                  </Typography>
-                </SectionHeader>
-              </Box>
-            )
-          ))}
+          <Box>
+            <SectionHeader 
+              title="APTITUDES SPÉCIALES"
+              factionColors={factionColors}
+            >
+              {datasheet.abilities?.special && datasheet.abilities.special.length > 0 ? (
+                datasheet.abilities.special.map((specialAbility, index) => (
+                  specialAbility.showAbility && (
+                    <Box key={`special-${index}`}>
+                      <Typography sx={{ 
+                        color: isDarkMode ? '#e0e0e0' : 'black',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.2
+                      }}>
+                        {translate(specialAbility.description, datasheet.faction_id)}
+                      </Typography>
+                    </Box>
+                  )
+                ))
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune aptitude spéciale
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Wargear Abilities Section */}
-          {datasheet.abilities && datasheet.abilities.wargear && datasheet.abilities.wargear.length > 0 && (
-            <Box>
-              <SectionHeader 
-                title="APTITUDES d'ÉQUIPEMENT"
-                factionColors={factionColors}
-              >
-                {datasheet.abilities.wargear.map((item, index) => (
+          <Box>
+            <SectionHeader 
+              title="APTITUDES d'ÉQUIPEMENT"
+              factionColors={factionColors}
+            >
+              {datasheet.abilities?.wargear && datasheet.abilities.wargear.length > 0 ? (
+                datasheet.abilities.wargear.map((item, index) => (
                   <Box key={index} sx={{ mb: 1 }}>
-                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(item.name, datasheet.faction_id)}:</Box> {translate(item.description, datasheet.faction_id)}
+                    <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(item.name, datasheet.faction_id)}:</Box> {translate(item.description, datasheet.faction_id)}
                   </Box>
-                ))}
-              </SectionHeader>
-            </Box>
-          )}
+                ))
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune aptitude d'équipement
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Damaged Abilities Section */}
-          {datasheet.abilities && datasheet.abilities.damaged && datasheet.abilities.damaged.showDamagedAbility && (
-            <Box>
-              <SectionHeader 
-                title={`ENDOMAGÉ: ${translate(datasheet.abilities.damaged.range, datasheet.faction_id)}`}
-                factionColors={factionColors}
-                icon={
-                  <Box
-                    sx={{
-                      position: 'relative',
+          <Box>
+            <SectionHeader 
+              title="ENDOMAGÉ"
+              factionColors={factionColors}
+              icon={
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '16px',
+                    height: '16px',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      backgroundImage: 'url("https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/svg/Toughness.svg")',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: 'contain',
+                      filter: 'brightness(0) invert(1)',
                       width: '16px',
                       height: '16px',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        backgroundImage: 'url("https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/svg/Toughness.svg")',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: 'contain',
-                        filter: 'brightness(0) invert(1)',
-                        width: '16px',
-                        height: '16px',
-                      },
-                    }}
-                  />
-                }
-              >
-                {datasheet.abilities.damaged.showDescription && datasheet.abilities.damaged.description && (
-                  <Typography sx={{ 
-                    color: isDarkMode ? '#e0e0e0' : 'black',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.2
-                  }}>
-                    {translate(datasheet.abilities.damaged.description, datasheet.faction_id)}
-                  </Typography>
-                )}
-              </SectionHeader>
-            </Box>
-          )}
+                    },
+                  }}
+                />
+              }
+            >
+              {datasheet.abilities?.damaged && datasheet.abilities.damaged.showDamagedAbility ? (
+                <>
+                  {datasheet.abilities.damaged.range && (
+                    <Typography sx={{ mb: 1, fontWeight: 'bold' }}>
+                      {translate(datasheet.abilities.damaged.range, datasheet.faction_id)}
+                    </Typography>
+                  )}
+                  {datasheet.abilities.damaged.showDescription && datasheet.abilities.damaged.description && (
+                    <Typography sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black',
+                      fontSize: '0.85rem',
+                      lineHeight: 1.2
+                    }}>
+                      {translate(datasheet.abilities.damaged.description, datasheet.faction_id)}
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                  Aucune règle d'endommagé
+                </Typography>
+              )}
+            </SectionHeader>
+          </Box>
 
           {/* Enhancements Section */}
-          {showEnhancements && datasheet.enhancements && datasheet.enhancements.length > 0 && (
+          {showEnhancements && (
             <Box>
               <SectionHeader 
                 title="AMÉLIORATIONS"
@@ -458,28 +513,34 @@ const UnitContent: React.FC<UnitContentProps> = ({
                   />
                 }
               >
-                {datasheet.enhancements.map((enhancement, index) => (
-                  <Box key={index} sx={{ mb: 1 }}>
-                    <Typography sx={{ 
-                      color: isDarkMode ? '#e0e0e0' : 'black',
-                      fontSize: '0.85rem',
-                      lineHeight: 1.5
-                    }}>
-                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(enhancement.name, datasheet.faction_id)} ({enhancement.cost} pts):</Box> {translate(enhancement.description, datasheet.faction_id)}
-                    </Typography>
-                    {enhancement.keywords && enhancement.keywords.length > 0 && (
+                {datasheet.enhancements && datasheet.enhancements.length > 0 ? (
+                  datasheet.enhancements.map((enhancement, index) => (
+                    <Box key={index} sx={{ mb: 1 }}>
                       <Typography sx={{ 
-                        fontSize: '0.8rem',
-                        color: isDarkMode ? 'white' : factionColors.header,
-                        fontStyle: 'italic',
-                        lineHeight: 1.2,
-                        mt: 0.5
+                        color: isDarkMode ? '#e0e0e0' : 'black',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.5
                       }}>
-                        [{enhancement.keywords.join(', ')}]
+                        <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(enhancement.name, datasheet.faction_id)} ({enhancement.cost} pts):</Box> {translate(enhancement.description, datasheet.faction_id)}
                       </Typography>
-                    )}
-                  </Box>
-                ))}
+                      {enhancement.keywords && enhancement.keywords.length > 0 && (
+                        <Typography sx={{ 
+                          fontSize: '0.8rem',
+                          color: isDarkMode ? 'white' : factionColors.header,
+                          fontStyle: 'italic',
+                          lineHeight: 1.2,
+                          mt: 0.5
+                        }}>
+                          [{enhancement.keywords.join(', ')}]
+                        </Typography>
+                      )}
+                    </Box>
+                  ))
+                ) : (
+                  <Typography sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                    Aucune amélioration disponible
+                  </Typography>
+                )}
               </SectionHeader>
             </Box>
           )}
