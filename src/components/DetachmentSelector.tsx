@@ -58,23 +58,14 @@ const DetachmentSelector: React.FC<DetachmentSelectorProps> = ({
   React.useEffect(() => {
     if (!open || !datasource) return;
 
-        let allDetachments: Detachment[] = [];
+    let allDetachments: Detachment[] = [];
     const factionData = Object.values(datasource).find(
-          (f: any) => f && f.id && f.id.toLowerCase() === (factionId || '').toLowerCase()
-        ) as any;
+      (f: any) => f && f.id && f.id.toLowerCase() === (factionId || '').toLowerCase()
+    ) as any;
     if (factionData?.detachments) {
       allDetachments.push(...factionData.detachments);
-        }
-        // Si sous-faction, ajouter les détachements de la faction parente
-        if (factionData?.is_subfaction && factionData.parent_id) {
-      const parentFaction = Object.values(datasource).find(
-            (f: any) => f && f.id && f.id.toLowerCase() === factionData.parent_id.toLowerCase()
-          ) as any;
-      if (parentFaction?.detachments) {
-        allDetachments.push(...parentFaction.detachments);
-          }
-        }
-        setAvailableDetachments(allDetachments);
+    }
+    setAvailableDetachments(allDetachments);
   }, [open, factionId, lang, datasource]);
 
   const handleInfoClick = (e: React.MouseEvent, det: Detachment) => {

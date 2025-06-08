@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
-import { loadDatasource } from '../../utils/datasourceDb';
+import { loadDatasource, saveDatasourceBloc } from '../../utils/datasourceDb';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import SettingsIcon from '@mui/icons-material/Settings';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useParams } from 'react-router-dom';
 import UnitHeader from './UnitHeader';
 import UnitContent from './UnitContent';
@@ -24,9 +25,10 @@ interface UnitCardProps {
   onOptionsClick?: () => void;
   onUnitUpdated?: () => void;
   onBack?: () => void;
+  onUnitDeleted?: () => void;
 }
 
-const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false, isBattleMode = false, onUnitAdded, onOptionsClick, onUnitUpdated, onBack }) => {
+const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false, isBattleMode = false, onUnitAdded, onOptionsClick, onUnitUpdated, onBack, onUnitDeleted }) => {
   const theme = useTheme();
   const [factionColors, setFactionColors] = useState({ banner: '#6a0e19', header: '#6d5035' });
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -34,6 +36,7 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
   const { armyId } = useParams<{ armyId: string }>();
   const [refreshKey, setRefreshKey] = useState(0);
   const [detachment, setDetachment] = useState<any>(null);
+  const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
     async function fetchColors() {
@@ -83,6 +86,50 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
     setMenuAnchorEl(null);
     setRefreshKey(prev => prev + 1);
   };
+
+  // Suppression de la datasheet et de ses traductions
+  const handleDelete = async () => {
+    if (!unit || !army.factionId) return;
+    const datasource = await loadDatasource();
+    const factionKey = `${army.factionId}_translated`;
+    const flatFrKey = `${army.factionId}_flat_fr`;
+    const flatEnKey = `${army.factionId}_flat_en`;
+    // 1. Supprimer la datasheet du translated
+    if (datasource[factionKey]?.datasheets) {
+      datasource[factionKey].datasheets = datasource[factionKey].datasheets.filter((ds: any) => ds.id !== unit.id && ds.name !== unit.name);
+      await saveDatasourceBloc(factionKey, datasource[factionKey]);
+    }
+    // 2. Supprimer toutes les clés commençant par datasheets.{id} ou datasheets.{name} dans les flats
+    const removeKeys = (bloc: any, prefix: string) => {
+      Object.keys(bloc).forEach(key => {
+        if (key.startsWith(prefix)) {
+          delete bloc[key];
+        }
+      });
+    };
+    if (datasource[flatFrKey]) {
+      removeKeys(datasource[flatFrKey], `datasheets.${unit.name}`);
+      removeKeys(datasource[flatFrKey], `datasheets.${unit.id}`);
+      await saveDatasourceBloc(flatFrKey, datasource[flatFrKey]);
+    }
+    if (datasource[flatEnKey]) {
+      removeKeys(datasource[flatEnKey], `datasheets.${unit.name}`);
+      removeKeys(datasource[flatEnKey], `datasheets.${unit.id}`);
+      await saveDatasourceBloc(flatEnKey, datasource[flatEnKey]);
+    }
+    setDeleted(true);
+    if (onUnitDeleted) onUnitDeleted();
+  };
+
+  if (deleted) {
+    return (
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          Datasheet supprimée.
+        </Typography>
+      </Box>
+    );
+  }
 
   if (!unit) {
     return (
@@ -139,6 +186,15 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
           zIndex: 10
         }}>
           <Box sx={{ position: 'absolute', right: 8, top: 8, height: '28px', display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Bouton suppression */}
+            <Tooltip title="Supprimer la datasheet">
+              <IconButton
+                onClick={handleDelete}
+                sx={{ color: 'error.main', width: '28px', height: '28px' }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {/* Mode normal (pas de bataille) et depuis ArmyList */}
             {!isBattleMode && isFromArmyList && (
               <Tooltip title="Options">

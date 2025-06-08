@@ -39,6 +39,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
   title?: React.ReactNode;
   leftAction?: React.ReactNode;
+  rightAction?: React.ReactNode;
 }
 
 const LanguageSelector = () => {
@@ -59,7 +60,7 @@ const LanguageSelector = () => {
   );
 };
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', leftAction }) => {
+const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', leftAction, rightAction }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const theme = useTheme();
@@ -369,6 +370,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
                 {title}
               </Typography>
               <Box sx={{ ml: 'auto', zIndex: 1, position: 'relative', pointerEvents: 'auto', minWidth: 56, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                {rightAction}
                 <IconButton
                   size="large"
                   edge="end"

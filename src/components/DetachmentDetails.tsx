@@ -24,6 +24,7 @@ import { TextFormatService } from '../services/textFormatService';
 import StratagemListItem from './CoreComponents/StratagemListItem';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslate } from '../services/translationService';
+import EditableSection from './UnitView/EditableSection';
 
 interface ArmyRule {
   name: string;
@@ -230,6 +231,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
   const { lang } = useLanguage();
   const [datasource, setDatasource] = useState<any>(null);
   const translate = useTranslate();
+  const [editState, setEditState] = useState({});
 
   const handleAccordionChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpandedSections(prev => 
@@ -246,6 +248,10 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
     }
     fetchData();
   }, []);
+
+  const handleSectionSave = () => {
+    setEditState({});
+  };
 
   if (!open) return null;
 
@@ -341,11 +347,18 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
               </AccordionSummary>
               <AccordionDetails>
                 {detachment.rules ? (
-                  <RuleCard
-                    name={detachment.name}
-                    rules={detachment.rules.map(r => r.rule).flat()}
-                    factionId={faction.id}
-                  />
+                  detachment.rules.map((rule, idx) => (
+                    <Box key={idx} sx={{ mb: 2 }}>
+                      <EditableSection
+                        content={rule.name}
+                        onSave={handleSectionSave}
+                      />
+                      <EditableSection
+                        content={rule.rule[0]?.text || ''}
+                        onSave={handleSectionSave}
+                      />
+                    </Box>
+                  ))
                 ) : (
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     Aucune règle de détachement disponible.
@@ -379,20 +392,25 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                       }}
                     >
                       <CardContent>
-                        <Box sx={{ 
+                        <Box sx={{  
                           display: 'grid',
                           gridTemplateColumns: '10fr 2fr',
-                          justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                            {translate(enhancement.name, faction.id)}
-                          </Typography>
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          mb: 1 
+                        }}>
+                          <EditableSection
+                            content={enhancement.name}
+                            onSave={handleSectionSave}
+                          />
                           <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
                             {enhancement.cost} Pts
                           </Typography>
                         </Box>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                          {TextFormatService.formatRuleText(translate(enhancement.description, faction.id))}
-                        </Typography>
+                        <EditableSection
+                          content={enhancement.description}
+                          onSave={handleSectionSave}
+                        />
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                           {enhancement.keywords.map((keyword: string, idx: number) => (
                             <Typography
@@ -571,13 +589,18 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
               },
             }}>
               {detachment.rules ? (
-                <RuleCard
-                  name={detachment.name}
-                  rules={detachment.rules.map(r => r.rule).flat()}
-                  factionId={faction.id}
-                  datasource={datasource}
-                  lang={lang}
-                />
+                detachment.rules.map((rule, idx) => (
+                  <Box key={idx} sx={{ mb: 2 }}>
+                    <EditableSection
+                      content={rule.name}
+                      onSave={handleSectionSave}
+                    />
+                    <EditableSection
+                      content={rule.rule[0]?.text || ''}
+                      onSave={handleSectionSave}
+                    />
+                  </Box>
+                ))
               ) : (
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Aucune règle de détachement disponible.
@@ -656,16 +679,18 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                         alignItems: 'center', 
                         mb: 1 
                       }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                          {translate(enhancement.name, faction.id)}
-                        </Typography>
+                        <EditableSection
+                          content={enhancement.name}
+                          onSave={handleSectionSave}
+                        />
                         <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
                           {enhancement.cost} Pts
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                        {TextFormatService.formatRuleText(translate(enhancement.description, faction.id))}
-                      </Typography>
+                      <EditableSection
+                        content={enhancement.description}
+                        onSave={handleSectionSave}
+                      />
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                         {enhancement.keywords.map((keyword: string, idx: number) => (
                           <Typography

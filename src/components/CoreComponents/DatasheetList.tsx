@@ -38,6 +38,7 @@ interface DatasheetListProps {
   searchTerm?: string;
   onSearch?: (term: string) => void;
   detachment?: any;
+  refreshKey?: number;
 }
 
 interface FactionData {
@@ -71,7 +72,8 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
   setShowLegends,
   searchTerm: externalSearchTerm,
   onSearch,
-  detachment
+  detachment,
+  refreshKey
 }) => {
   
   const [datasheets, setDatasheets] = useState<Datasheet[]>([]);
@@ -547,17 +549,25 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
         }
         setFaction(currentFaction);
         let allDatasheets: Datasheet[] = [];
-        if (currentFaction.parent_id) {
-          const parentFaction = data[`${currentFaction.parent_id}_translated`];
-          if (parentFaction?.datasheets?.length) {
-            const parentDatasheets = parentFaction.datasheets.filter((datasheet: Datasheet) => 
-              !datasheet.keywords?.includes("Epic Hero")
-            );
-            allDatasheets = [...parentDatasheets];
+        if (currentFaction.is_subfaction) {
+          // Sous-faction : uniquement ses propres datasheets
+          if (currentFaction.datasheets?.length) {
+            allDatasheets = [...currentFaction.datasheets];
           }
-        }
-        if (currentFaction.datasheets?.length) {
-          allDatasheets = [...allDatasheets, ...currentFaction.datasheets];
+        } else {
+          // Faction principale : fusion avec parent si besoin
+          if (currentFaction.parent_id) {
+            const parentFaction = data[`${currentFaction.parent_id}_translated`];
+            if (parentFaction?.datasheets?.length) {
+              const parentDatasheets = parentFaction.datasheets.filter((datasheet: Datasheet) => 
+                !datasheet.keywords?.includes("Epic Hero")
+              );
+              allDatasheets = [...parentDatasheets];
+            }
+          }
+          if (currentFaction.datasheets?.length) {
+            allDatasheets = [...allDatasheets, ...currentFaction.datasheets];
+          }
         }
         const uniqueDatasheets = Array.from(new Map(allDatasheets.map(item => [item.id, item])).values());
         const sortedDatasheets = sortDatasheets(uniqueDatasheets);
@@ -569,7 +579,7 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
 
   useEffect(() => {
     loadDatasheets();
-  }, [loadDatasheets]);
+  }, [loadDatasheets, refreshKey]);
 
   useEffect(() => {
     if (!datasheets.length) return;
