@@ -4,6 +4,13 @@ import BlockIcon from '@mui/icons-material/Block';
 import StatEditPopup from '../CoreComponents/StatEditPopup';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import IconButton from '@mui/material/IconButton';
+import { useDatasource } from '../../contexts/DatasourceContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { saveDatasourceBloc, loadDatasourceBloc } from '../../utils/datasourceDb';
+import { useTranslate } from '../../services/translationService';
 
 interface EditableStatsProps {
   stats: {
@@ -40,6 +47,7 @@ interface EditableStatsProps {
   };
   isFromArmyList?: boolean;
   onActiveChange?: (active: boolean) => void;
+  factionId: string;
 }
 
 const statOrder: { key: keyof EditableStatsProps['stats']; label: string; prefix: string }[] = [
@@ -125,10 +133,16 @@ const EditableStats: React.FC<EditableStatsProps> = ({
   isBattleMode,
   datasheet,
   isFromArmyList = false,
-  onActiveChange
+  onActiveChange,
+  factionId
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
+  const { datasource, setDatasource } = useDatasource();
+  const { lang } = useLanguage();
+  const translate = useTranslate();
+  const [editingName, setEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
   const [selectedStat, setSelectedStat] = useState<{key: keyof EditableStatsProps['stats'], label: string} | null>(null);
   const [stats, setStats] = useState(() => {
     // Nettoyer les statistiques originales
@@ -316,6 +330,52 @@ const EditableStats: React.FC<EditableStatsProps> = ({
       }
     }
     if (onActiveChange) onActiveChange(newActive);
+  };
+
+  const handleNameEdit = () => {
+    let translated = stats.name || '';
+    if (datasource && stats.name) {
+      const flatKey = `${factionId}_flat_${lang}`;
+      translated = datasource[flatKey]?.[stats.name] || stats.name;
+      if (!translated) {
+        for (const k of Object.keys(datasource)) {
+          if (k.endsWith(`_flat_${lang}`) && datasource[k]?.[stats.name]) {
+            translated = datasource[k][stats.name];
+            break;
+          }
+        }
+      }
+    }
+    setEditingName(true);
+    setEditedName(translated);
+  };
+
+  const handleNameSave = async () => {
+    const nameKey = stats.name;
+    let blocKey = '';
+    if (datasource && nameKey) {
+      for (const k of Object.keys(datasource)) {
+        if (k.endsWith(`_flat_${lang}`) && datasource[k] && nameKey in datasource[k]) {
+          blocKey = k;
+          break;
+        }
+      }
+      if (!blocKey) {
+        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+      }
+    }
+    if (!blocKey || !nameKey) {
+      alert('Impossible de trouver le fichier de langue à modifier.');
+      setEditingName(false);
+      setEditedName('');
+      return;
+    }
+    const bloc = await loadDatasourceBloc(blocKey);
+    bloc[nameKey] = editedName;
+    await saveDatasourceBloc(blocKey, bloc);
+    setDatasource({ ...datasource, [blocKey]: bloc });
+    setEditingName(false);
+    setEditedName('');
   };
 
   return (
@@ -553,14 +613,39 @@ const EditableStats: React.FC<EditableStatsProps> = ({
               zIndex: 5
             }}>
               {(stats.showName || 'isCombinedUnit' in datasheet) && (
-                <Typography sx={{
-                  color: 'white',
-                  fontSize: '0.9rem',
-                  fontWeight: 300,
-                  lineHeight: 1
-                }}>
-                  {stats.name}
-                </Typography>
+                editingName ? (
+                  <>
+                    <input
+                      value={editedName}
+                      onChange={e => setEditedName(e.target.value)}
+                      style={{
+                        color: 'white',
+                        fontSize: '0.9rem',
+                        fontWeight: 300,
+                        lineHeight: 1,
+                        background: 'transparent',
+                        border: '1px solid #fff',
+                        borderRadius: 4,
+                        padding: '2px 8px',
+                        marginRight: 8,
+                        maxWidth: 200
+                      }}
+                    />
+                    <IconButton size="small" onClick={handleNameSave} sx={{ color: 'white' }}><SaveIcon fontSize="small" /></IconButton>
+                  </>
+                ) : (
+                  <>
+                    <Typography sx={{
+                      color: 'white',
+                      fontSize: '0.9rem',
+                      fontWeight: 300,
+                      lineHeight: 1
+                    }}>
+                      {translate(stats.name ?? '', factionId)}
+                    </Typography>
+                    <IconButton size="small" onClick={handleNameEdit} sx={{ color: 'white', ml: 1 }}><EditIcon fontSize="small" /></IconButton>
+                  </>
+                )
               )}
             </Box>
           </Box>

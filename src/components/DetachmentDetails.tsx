@@ -249,7 +249,36 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
     fetchData();
   }, []);
 
-  const handleSectionSave = () => {
+  const handleSectionSave = (newContent: any, section?: string) => {
+    const updatedDetachment = { ...detachment };
+    
+    if (section && section.startsWith('stratagem_')) {
+      const stratagemIndex = parseInt(section.split('_')[1]);
+      const field = section.split('_')[2];
+      updatedDetachment.stratagems[stratagemIndex] = {
+        ...updatedDetachment.stratagems[stratagemIndex],
+        [field]: newContent
+      };
+    } else if (section) {
+      switch (section) {
+        case 'name':
+          updatedDetachment.name = newContent;
+          break;
+        // ... autres cas existants ...
+      }
+    }
+    
+    // Sauvegarder dans le localStorage
+    const armies = JSON.parse(localStorage.getItem('army_list') || '[]');
+    const army = armies.find((a: any) => a.armyId === faction.id);
+    if (army) {
+      const detachmentIndex = army.detachments.findIndex((d: any) => d.name === detachment.name);
+      if (detachmentIndex !== -1) {
+        army.detachments[detachmentIndex] = updatedDetachment;
+        localStorage.setItem('army_list', JSON.stringify(armies));
+      }
+    }
+    
     setEditState({});
   };
 
@@ -451,12 +480,156 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
               <AccordionDetails>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                   {detachment.stratagems.map((stratagem, index) => (
-                    <StratagemListItem
-                      key={`stratagem-${index}`}
-                      stratagem={stratagem}
-                      onClick={() => setSelectedStratagem(stratagem)}
-                      factionId={faction.id}
-                    />
+                    <Card
+                      key={index}
+                      sx={{
+                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        maxHeight: 'none',
+                        height: 'auto',
+                        overflow: 'visible',
+                      }}
+                    >
+                      <CardContent
+                        sx={{
+                          maxHeight: 'none',
+                          height: 'auto',
+                          overflow: 'visible',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                        }}
+                      >
+                        <Box sx={{  
+                          display: 'grid',
+                          gridTemplateColumns: '10fr 2fr',
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          mb: 1 
+                        }}>
+                          <Box>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                              {translate('Nom du stratagème', '')}
+                            </Typography>
+                            <EditableSection
+                              content={stratagem.name}
+                              onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_name`)}
+                            />
+                          </Box>
+                          <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
+                            {stratagem.cost} CP
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                              {translate('Effet', '')}
+                            </Typography>
+                            <EditableSection
+                              content={stratagem.effect}
+                              onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_effect`)}
+                            />
+                          </Box>
+
+                          {stratagem.fluff && (
+                            <Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                {translate('Description', '')}
+                              </Typography>
+                              <EditableSection
+                                content={stratagem.fluff}
+                                onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_fluff`)}
+                              />
+                            </Box>
+                          )}
+
+                          {stratagem.when && (
+                            <Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                {translate('Quand utiliser', '')}
+                              </Typography>
+                              <EditableSection
+                                content={stratagem.when}
+                                onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_when`)}
+                              />
+                            </Box>
+                          )}
+
+                          {stratagem.target && (
+                            <Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                {translate('Cible', '')}
+                              </Typography>
+                              <EditableSection
+                                content={stratagem.target}
+                                onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_target`)}
+                              />
+                            </Box>
+                          )}
+
+                          {stratagem.restrictions && (
+                            <Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                {translate('Restrictions', '')}
+                              </Typography>
+                              <EditableSection
+                                content={stratagem.restrictions}
+                                onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_restrictions`)}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                          {stratagem.phase && stratagem.phase.length > 0 && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                                px: 1,
+                                borderRadius: 1,
+                                mr: 1
+                              }}
+                            >
+                              {translate('Phase', '')}: {stratagem.phase.map(p => translate(p, '')).join(', ')}
+                            </Typography>
+                          )}
+
+                          {stratagem.turn && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                                px: 1,
+                                borderRadius: 1,
+                                mr: 1
+                              }}
+                            >
+                              {translate('Tour', '')}: {translate(stratagem.turn, '')}
+                            </Typography>
+                          )}
+
+                          {stratagem.type && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                                px: 1,
+                                borderRadius: 1,
+                                mr: 1
+                              }}
+                            >
+                              {translate('Type', '')}: {translate(stratagem.type, '')}
+                            </Typography>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
                   ))}
                 </Box>
               </AccordionDetails>
@@ -776,11 +949,156 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
               },
             }}>
               {detachment.stratagems.map((stratagem, index) => (
-                <StratagemCard 
+                <Card
                   key={index} 
-                  stratagem={stratagem} 
-                  asBoxOnly
-                />
+                  sx={{
+                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    maxHeight: 'none',
+                    height: 'auto',
+                    overflow: 'visible',
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      maxHeight: 'none',
+                      height: 'auto',
+                      overflow: 'visible',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 2,
+                    }}
+                  >
+                    <Box sx={{  
+                      display: 'grid',
+                      gridTemplateColumns: '10fr 2fr',
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      mb: 1 
+                    }}>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                          {translate('Nom du stratagème', '')}
+                        </Typography>
+                        <EditableSection
+                          content={stratagem.name}
+                          onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_name`)}
+                        />
+                      </Box>
+                      <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
+                        {stratagem.cost} CP
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                          {translate('Effet', '')}
+                        </Typography>
+                        <EditableSection
+                          content={stratagem.effect}
+                          onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_effect`)}
+                        />
+                      </Box>
+
+                      {stratagem.fluff && (
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {translate('Description', '')}
+                          </Typography>
+                          <EditableSection
+                            content={stratagem.fluff}
+                            onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_fluff`)}
+                          />
+                        </Box>
+                      )}
+
+                      {stratagem.when && (
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {translate('Quand utiliser', '')}
+                          </Typography>
+                          <EditableSection
+                            content={stratagem.when}
+                            onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_when`)}
+                          />
+                        </Box>
+                      )}
+
+                      {stratagem.target && (
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {translate('Cible', '')}
+                          </Typography>
+                          <EditableSection
+                            content={stratagem.target}
+                            onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_target`)}
+                          />
+                        </Box>
+                      )}
+
+                      {stratagem.restrictions && (
+                        <Box>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {translate('Restrictions', '')}
+                          </Typography>
+                          <EditableSection
+                            content={stratagem.restrictions}
+                            onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_restrictions`)}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                      {stratagem.phase && stratagem.phase.length > 0 && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                            color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                            px: 1,
+                            borderRadius: 1,
+                            mr: 1
+                          }}
+                        >
+                          {translate('Phase', '')}: {stratagem.phase.map(p => translate(p, '')).join(', ')}
+                        </Typography>
+                      )}
+
+                      {stratagem.turn && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                            color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                            px: 1,
+                            borderRadius: 1,
+                            mr: 1
+                          }}
+                        >
+                          {translate('Tour', '')}: {translate(stratagem.turn, '')}
+                        </Typography>
+                      )}
+
+                      {stratagem.type && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                            color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+                            px: 1,
+                            borderRadius: 1,
+                            mr: 1
+                          }}
+                        >
+                          {translate('Type', '')}: {translate(stratagem.type, '')}
+                        </Typography>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
               ))}
             </Box>
           </Box>

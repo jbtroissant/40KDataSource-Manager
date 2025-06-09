@@ -81,11 +81,12 @@ const FactionView: React.FC = () => {
     files.forEach(({ key, name }) => {
       const data = datasource[key];
       if (data) {
+        const fileName = name.replace(/_/g, '.');
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = name;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {

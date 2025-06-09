@@ -5,6 +5,12 @@ import EditableStats from './EditableStats';
 import { useParams } from 'react-router-dom';
 import UnitStatus from '../CoreComponents/UnitStatus';
 import { useTranslate } from '../../services/translationService';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import IconButton from '@mui/material/IconButton';
+import { useDatasource } from '../../contexts/DatasourceContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { saveDatasourceBloc, loadDatasourceBloc } from '../../utils/datasourceDb';
 
 const TITLE_FONT_FAMILY = '"EB Garamond", "serif"';
 
@@ -34,6 +40,10 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({
   const { armyId } = useParams<{ armyId: string }>();
   const isLegendWithoutPoints = datasheet.legends && (!datasheet.points || datasheet.points.length === 0);
   const translate = useTranslate();
+  const { datasource, setDatasource } = useDatasource();
+  const { lang } = useLanguage();
+  const [editingName, setEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
   
   const handlePointsClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!isLegendWithoutPoints && datasheet.points && datasheet.points.length > 0) {
@@ -46,6 +56,53 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({
   };
 
   const open = Boolean(anchorEl);
+
+  const handleNameEdit = () => {
+    let translated = datasheet.name;
+    if (datasource) {
+      const factionKey = datasheet.faction_id;
+      const flatKey = `${factionKey}_flat_${lang}`;
+      translated = datasource[flatKey]?.[datasheet.name] || datasheet.name;
+      if (!translated) {
+        for (const k of Object.keys(datasource)) {
+          if (k.endsWith(`_flat_${lang}`) && datasource[k]?.[datasheet.name]) {
+            translated = datasource[k][datasheet.name];
+            break;
+          }
+        }
+      }
+    }
+    setEditingName(true);
+    setEditedName(translated);
+  };
+
+  const handleNameSave = async () => {
+    const nameKey = datasheet.name;
+    let blocKey = '';
+    if (datasource) {
+      for (const k of Object.keys(datasource)) {
+        if (k.endsWith(`_flat_${lang}`) && datasource[k] && nameKey in datasource[k]) {
+          blocKey = k;
+          break;
+        }
+      }
+      if (!blocKey) {
+        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+      }
+    }
+    if (!blocKey) {
+      alert('Impossible de trouver le fichier de langue à modifier.');
+      setEditingName(false);
+      setEditedName('');
+      return;
+    }
+    const bloc = await loadDatasourceBloc(blocKey);
+    bloc[nameKey] = editedName;
+    await saveDatasourceBloc(blocKey, bloc);
+    setDatasource({ ...datasource, [blocKey]: bloc });
+    setEditingName(false);
+    setEditedName('');
+  };
 
   return (
     <Box sx={{ 
@@ -111,21 +168,45 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({
             alignItems: 'center',
             justifyContent: 'flex-start'
           }}>
-            <Typography sx={{
-              textTransform: 'uppercase',
-              fontSize: '1.3rem',
-              fontWeight: 600,
-              color: 'white',
-              lineHeight: '1.5rem',
-              letterSpacing: '0.05em',
-              zIndex: 3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: { xs: '60vw', sm: '40vw', md: '32vw', lg: '28vw' },
-            }}>
-              {translate(datasheet.name, datasheet.faction_id)}
-            </Typography>
+            {editingName ? (
+              <>
+                <input
+                  value={editedName}
+                  onChange={e => setEditedName(e.target.value)}
+                  style={{
+                    fontSize: '1.3rem',
+                    fontWeight: 600,
+                    color: 'white',
+                    background: 'transparent',
+                    border: '1px solid #fff',
+                    borderRadius: 4,
+                    padding: '2px 8px',
+                    marginRight: 8,
+                    maxWidth: 300
+                  }}
+                />
+                <IconButton size="small" onClick={handleNameSave} sx={{ color: 'white' }}><SaveIcon fontSize="small" /></IconButton>
+              </>
+            ) : (
+              <>
+                <Typography sx={{
+                  textTransform: 'uppercase',
+                  fontSize: '1.3rem',
+                  fontWeight: 600,
+                  color: 'white',
+                  lineHeight: '1.5rem',
+                  letterSpacing: '0.05em',
+                  zIndex: 3,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: { xs: '60vw', sm: '40vw', md: '32vw', lg: '28vw' },
+                }}>
+                  {translate(datasheet.name, datasheet.faction_id)}
+                </Typography>
+                <IconButton size="small" onClick={handleNameEdit} sx={{ color: 'white', ml: 1 }}><EditIcon fontSize="small" /></IconButton>
+              </>
+            )}
           </Box>
 
           {/* Points Container */}
@@ -296,7 +377,7 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({
                 zIndex: 5
               }}>
                 <EditableStats 
-                  stats={{...statRow, name: translate(statRow.name, datasheet.faction_id)}}
+                  stats={{...statRow}}
                   factionColors={factionColors}
                   showHeaders={rowIndex === 0}
                   unitId={datasheet.id}
@@ -305,6 +386,7 @@ const UnitHeader: React.FC<UnitHeaderProps> = ({
                   datasheet={datasheet}
                   isBattleMode={typeof isBattleMode !== 'undefined' ? isBattleMode : false}
                   isFromArmyList={isFromArmyList}
+                  factionId={datasheet.faction_id}
                 />
               </Box>
             </Box>

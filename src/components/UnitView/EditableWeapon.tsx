@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { Box, Typography, useTheme, useMediaQuery, Checkbox, Chip } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Checkbox, Chip, TextField, IconButton } from '@mui/material';
 import { Weapon } from '../../types/weapon';
 import StatEditPopup from '../CoreComponents/StatEditPopup';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { useTranslate } from '../../services/translationService';
+import { useDatasource } from '../../contexts/DatasourceContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { saveDatasourceBloc, loadDatasourceBloc } from '../../utils/datasourceDb';
 
 interface EditableWeaponProps {
   weapons: Weapon[];
@@ -45,6 +50,10 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
     });
     return initial;
   });
+  const [editingName, setEditingName] = useState<{weaponIndex: number, profileIndex: number} | null>(null);
+  const [editedName, setEditedName] = useState('');
+  const { datasource, setDatasource } = useDatasource();
+  const { lang } = useLanguage();
 
   const handleStatClick = (event: React.MouseEvent<HTMLElement> | null, key: string, label: string, weaponIndex: number, profileIndex: number) => {
     if (!isBattleMode) return;
@@ -225,6 +234,61 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
     const value = profile[`modified_${key}`] !== undefined ? profile[`modified_${key}`] : profile[key];
     return formatStatValue(key, value);
   };
+
+  const handleNameEdit = (weaponIndex: number, profileIndex: number, currentName: string) => {
+    // Afficher la valeur traduite dans le champ d'édition
+    let translated = currentName;
+    if (datasource) {
+      const factionKey = factionId;
+      const flatKey = `${factionKey}_flat_${lang}`;
+      translated = datasource[flatKey]?.[currentName] || currentName;
+      if (!translated) {
+        // Chercher dans tous les blocs flat
+        for (const k of Object.keys(datasource)) {
+          if (k.endsWith(`_flat_${lang}`) && datasource[k]?.[currentName]) {
+            translated = datasource[k][currentName];
+            break;
+          }
+        }
+      }
+    }
+    setEditingName({ weaponIndex, profileIndex });
+    setEditedName(translated);
+  };
+
+  const handleNameSave = async (weaponIndex: number, profileIndex: number) => {
+    const newWeapons = [...weapons];
+    const profile = newWeapons[weaponIndex].profiles[profileIndex];
+    const nameKey = profile.name;
+    // Trouver le bloc flat à modifier
+    let blocKey = '';
+    if (datasource) {
+      for (const k of Object.keys(datasource)) {
+        if (k.endsWith(`_flat_${lang}`) && datasource[k] && nameKey in datasource[k]) {
+          blocKey = k;
+          break;
+        }
+      }
+      if (!blocKey) {
+        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+      }
+    }
+    if (!blocKey) {
+      alert('Impossible de trouver le fichier de langue à modifier.');
+      setEditingName(null);
+      setEditedName('');
+      return;
+    }
+    // Charger le bloc
+    const bloc = await loadDatasourceBloc(blocKey);
+    bloc[nameKey] = editedName;
+    await saveDatasourceBloc(blocKey, bloc);
+    // Rafraîchir le datasource global
+    setDatasource({ ...datasource, [blocKey]: bloc });
+    setEditingName(null);
+    setEditedName('');
+  };
+
   return (
     <Box
       sx={{
@@ -451,8 +515,26 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                           color: isDarkMode ? '#e0e0e0' : 'black',
                           fontWeight: 700,
                           fontSize: '1rem',
+                          display: 'flex',
+                          alignItems: 'center'
                         }}>
-                          {translate(profile.name, factionId)}
+                          {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
+                            <>
+                              <TextField
+                                value={editedName}
+                                onChange={e => setEditedName(e.target.value)}
+                                size="small"
+                                variant="standard"
+                                sx={{ mr: 1, minWidth: 120 }}
+                              />
+                              <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
+                            </>
+                          ) : (
+                            <>
+                              {translate(profile.name, factionId)}
+                              <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
+                            </>
+                          )}
                         </Typography>
                         <Box sx={{
                           display: 'flex',
@@ -563,7 +645,23 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                     }}
                   >
                     <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
-                      {translate(profile.name, factionId)}
+                      {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
+                        <>
+                          <TextField
+                            value={editedName}
+                            onChange={e => setEditedName(e.target.value)}
+                            size="small"
+                            variant="standard"
+                            sx={{ mr: 1, minWidth: 120 }}
+                          />
+                          <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
+                        </>
+                      ) : (
+                        <>
+                          {translate(profile.name, factionId)}
+                          <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
+                        </>
+                      )}
                       {profile.keywords && profile.keywords.length > 0 && (
                         <Box sx={{ 
                           display: 'flex',
