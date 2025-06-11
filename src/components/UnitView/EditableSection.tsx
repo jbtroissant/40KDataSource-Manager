@@ -105,21 +105,20 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     // Remplacement pour forcer le saut de ligne markdown
     values = values.map(v => typeof v === 'string' ? v.replace(/\\n/g, '  \n').replace(/\n/g, '  \n') : v);
 
-    // Nouvelle logique : chercher la clé dans tous les blocs flat de la langue
+    // Priorité : bloc flat de la faction courante
     let blocKey = '';
-    for (const k of Object.keys(datasource)) {
-      if (k.endsWith(`_flat_${lang}`) && datasource[k]) {
-        if (keys.some(key => key in datasource[k])) {
-          blocKey = k;
-          break;
+    const flatKeyPrefix = factionId ? `${factionId}_flat_${lang}` : '';
+    if (flatKeyPrefix && datasource[flatKeyPrefix] && keys.some(key => key in datasource[flatKeyPrefix])) {
+      blocKey = flatKeyPrefix;
+    } else {
+      // Sinon, chercher dans les autres blocs flat
+      for (const k of Object.keys(datasource)) {
+        if (k.endsWith(`_flat_${lang}`) && datasource[k]) {
+          if (keys.some(key => key in datasource[k])) {
+            blocKey = k;
+            break;
+          }
         }
-      }
-    }
-    // Si aucun bloc trouvé, fallback sur le bloc de la faction
-    if (!blocKey) {
-      const flatKeyPrefix = factionId ? `${factionId}_flat_${lang}` : '';
-      if (flatKeyPrefix && datasource[flatKeyPrefix]) {
-        blocKey = flatKeyPrefix;
       }
     }
     if (!blocKey) {

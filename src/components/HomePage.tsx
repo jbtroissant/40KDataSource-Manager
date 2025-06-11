@@ -480,7 +480,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <AppLayout title="Mes listes d'armée">
+    <AppLayout title="Factions disponnibles">
       <Box sx={{ 
         display: 'flex',
         flexDirection: 'column',
