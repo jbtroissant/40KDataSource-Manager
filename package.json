@@ -17,6 +17,7 @@
     "@zxing/library": "^0.21.3",
     "ajv": "^8.12.0",
     "ajv-keywords": "^5.1.0",
+    "buffer": "^6.0.3",
     "html-webpack-plugin": "^5.6.3",
     "idb": "^8.0.3",
     "jsqr": "^1.4.0",
@@ -25,17 +26,17 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0",
     "react-scripts": "5.0.1",
+    "timers-browserify": "^2.0.12",
     "web-vitals": "^2.1.4",
-    "webpack": "^5.75.0",
-    "buffer": "^6.0.3",
-    "timers-browserify": "^2.0.12"
+    "webpack": "^5.75.0"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "node --max_old_space_size=8192 node_modules/.bin/react-scripts build",
+    "build": "node --max_old_space_size=12288 node_modules/.bin/react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "prebuild": "node sync-version.js"
+    "prebuild": "node sync-version.js",
+    "clean": "rimraf build node_modules/.cache"
   },
   "eslintConfig": {
     "extends": [
@@ -61,6 +62,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/uuid": "^10.0.0",
+    "rimraf": "^6.0.1",
     "typescript": "^4.9.5"
   }
 }
