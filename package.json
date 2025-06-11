@@ -24,6 +24,7 @@
     "qrcode.react": "^3.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^8.0.7",
     "react-router-dom": "^6.22.0",
     "react-scripts": "5.0.1",
     "timers-browserify": "^2.0.12",
@@ -32,7 +33,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "node --max_old_space_size=12288 node_modules/.bin/react-scripts build",
+    "build": "set NODE_OPTIONS=--max_old_space_size=12288 && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "prebuild": "node sync-version.js",

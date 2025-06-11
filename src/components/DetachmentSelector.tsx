@@ -242,20 +242,6 @@ const DetachmentSelector: React.FC<DetachmentSelectorProps> = ({
                 <Typography variant="subtitle1" sx={{ color: 'text.primary', mb: 1, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                   {translate(det.name, factionId)}
                 </Typography>
-                  <Tooltip title={translate('more_info', factionId)}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleInfoClick(e, det)}
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      color: 'primary.main',
-                    }}
-                  >
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
               </Card>
               );
             })}
@@ -413,20 +399,6 @@ const DetachmentSelector: React.FC<DetachmentSelectorProps> = ({
                   <Typography variant="subtitle1" sx={{mb: 1, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     {translate(det.name, factionId)}
                   </Typography>
-                  <Tooltip title={translate('more_info', factionId)}>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleInfoClick(e, det)}
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        color: 'primary.main',
-                      }}
-                    >
-                      <InfoIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
                 </Card>
               );
             })}

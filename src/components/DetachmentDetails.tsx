@@ -332,21 +332,11 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
           >
             <CloseIcon />
           </IconButton>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              fontWeight: 'bold',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-              width: '100%',
-              px: 4,
-            }}
-          >
-            {datasource ? translate(detachment.name, faction.id) : detachment.name}
-          </Typography>
+          <EditableSection
+            content={detachment.name}
+            onSave={(val) => handleSectionSave(val, 'name')}
+            factionId={faction.id}
+          />
         </Box>
 
         {/* Contenu principal scrollable */}
@@ -697,9 +687,11 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
         bgcolor: 'transparent',
         backdropFilter: 'blur(10px)',
       }}>
-        <Typography variant="h6" component="div" sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-          {translate(detachment.name, faction.id)}
-        </Typography>
+        <EditableSection
+          content={detachment.name}
+          onSave={(val) => handleSectionSave(val, 'name')}
+          factionId={faction.id}
+        />
         <IconButton
           edge="end"
           onClick={onClose}

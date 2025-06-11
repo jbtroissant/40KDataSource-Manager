@@ -7,6 +7,7 @@ import { useTranslate } from '../../services/translationService';
 import { useDatasource } from '../../contexts/DatasourceContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { saveDatasourceBloc, loadDatasourceBloc } from '../../utils/datasourceDb';
+import ReactMarkdown from 'react-markdown';
 
 interface EditableSectionProps {
   title?: string;
@@ -101,21 +102,24 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       values = [editedContent];
     }
 
-    // Nouvelle logique : on privilégie le bloc flat de la faction
+    // Remplacement pour forcer le saut de ligne markdown
+    values = values.map(v => typeof v === 'string' ? v.replace(/\\n/g, '  \n').replace(/\n/g, '  \n') : v);
+
+    // Nouvelle logique : chercher la clé dans tous les blocs flat de la langue
     let blocKey = '';
-    const flatKeyPrefix = factionId ? `${factionId}_flat_${lang}` : '';
-    if (flatKeyPrefix && datasource[flatKeyPrefix]) {
-      blocKey = flatKeyPrefix;
-    } else {
-      // fallback sur l'ancienne logique
-      for (const k of Object.keys(datasource)) {
-        if (k.endsWith(`_flat_${lang}`) && datasource[k] && keys.some(key => key in datasource[k])) {
+    for (const k of Object.keys(datasource)) {
+      if (k.endsWith(`_flat_${lang}`) && datasource[k]) {
+        if (keys.some(key => key in datasource[k])) {
           blocKey = k;
           break;
         }
       }
-      if (!blocKey) {
-        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+    }
+    // Si aucun bloc trouvé, fallback sur le bloc de la faction
+    if (!blocKey) {
+      const flatKeyPrefix = factionId ? `${factionId}_flat_${lang}` : '';
+      if (flatKeyPrefix && datasource[flatKeyPrefix]) {
+        blocKey = flatKeyPrefix;
       }
     }
     if (!blocKey) {
@@ -251,9 +255,13 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                         fields.map(([key, value]) => (
                           <Box key={key} sx={{ mb: 0.5 }}>
                             {key === 'name' ? (
-                              <Typography sx={{ fontWeight: 700 }}>{translate(value as string, '')}</Typography>
+                              <Typography sx={{ fontWeight: 700 }}>
+                                <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                              </Typography>
                             ) : (
-                              <Typography sx={{ fontSize: '0.95em', color: '#444' }}>{translate(value as string, '')}</Typography>
+                              <Typography sx={{ fontSize: '0.95em', color: '#444' }}>
+                                <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                              </Typography>
                             )}
                           </Box>
                         ))
@@ -265,7 +273,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                 })
               ) : Array.isArray(content) ? (
                 content.map((item: any, idx: number) => (
-                  <Typography key={idx}>{translate(item as string, '')}</Typography>
+                  <ReactMarkdown key={idx}>{translate(item as string, '')}</ReactMarkdown>
                 ))
               ) : typeof content === 'object' && content !== null ? (
                 (() => {
@@ -275,9 +283,13 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                     fields.map(([key, value]) => (
                       <Box key={key} sx={{ mb: 0.5 }}>
                         {key === 'name' ? (
-                          <Typography sx={{ fontWeight: 700 }}>{translate(value as string, '')}</Typography>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                          </Typography>
                         ) : (
-                          <Typography sx={{ fontSize: '0.95em', color: '#444' }}>{translate(value as string, '')}</Typography>
+                          <Typography sx={{ fontSize: '0.95em', color: '#444' }}>
+                            <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                          </Typography>
                         )}
                       </Box>
                     ))
@@ -286,7 +298,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   );
                 })()
               ) : (
-                <Typography>{translate(content as string, '')}</Typography>
+                <ReactMarkdown>{translate(content as string, '')}</ReactMarkdown>
               )}
             </Box>
             <IconButton size="small" onClick={handleEdit} sx={{ color: 'inherit', ml: 1 }}>
