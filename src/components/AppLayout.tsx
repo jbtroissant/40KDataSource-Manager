@@ -51,10 +51,14 @@ const LanguageSelector = () => {
         onChange={e => setLang(e.target.value as 'fr' | 'en')}
         size="small"
         variant="outlined"
-        sx={{ minWidth: 80 }}
+        sx={{ minWidth: 80, verticalAlign: 'middle' }}
       >
-        <MuiMenuItem value="fr">FR</MuiMenuItem>
-        <MuiMenuItem value="en">EN</MuiMenuItem>
+        <MuiMenuItem value="fr">
+          <span role="img" aria-label="Français" style={{ marginRight: 8 }}>🇫🇷</span> FR
+        </MuiMenuItem>
+        <MuiMenuItem value="en">
+          <span role="img" aria-label="English" style={{ marginRight: 8 }}>🇬🇧</span> EN
+        </MuiMenuItem>
       </MuiSelect>
     </Box>
   );
@@ -371,6 +375,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
               </Typography>
               <Box sx={{ ml: 'auto', zIndex: 1, position: 'relative', pointerEvents: 'auto', minWidth: 56, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 {rightAction}
+                <LanguageSelector />
                 <IconButton
                   size="large"
                   edge="end"

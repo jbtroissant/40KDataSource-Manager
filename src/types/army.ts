@@ -30,8 +30,10 @@ export interface Army {
 export interface ArmyRule {
   name: string;
   rule: {
-    name: string;
+    name?: string;
     text: string;
+    order?: number;
+    type?: string;
   }[];
   order: number;
 }

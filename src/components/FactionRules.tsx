@@ -10,16 +10,20 @@ import {
   useMediaQuery,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Button,
+  TextField
 } from '@mui/material';
 import { ArmyRule } from '../types/army';
 import { TextFormatService } from '../services/textFormatService';
 import CloseIcon from '@mui/icons-material/Close';
-import { loadDatasource } from '../utils/datasourceDb';
+import { loadDatasource, saveDatasourceBloc, loadDatasourceBloc } from '../utils/datasourceDb';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslate } from '../services/translationService';
 import EditableSection from './UnitView/EditableSection';
+import ReactMarkdown from 'react-markdown';
+import { useDatasource } from '../contexts/DatasourceContext';
 
 interface FactionRulesProps {
   open: boolean;
@@ -37,6 +41,11 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
   const { lang } = useLanguage();
   const [datasource, setDatasource] = useState<any>(null);
   const translate = useTranslate();
+  const [addMode, setAddMode] = useState(false);
+  const [newRuleTitle, setNewRuleTitle] = useState('');
+  const [newRuleText, setNewRuleText] = useState('');
+  const [addError, setAddError] = useState('');
+  const { refreshDatasource } = useDatasource();
 
   useEffect(() => {
     if (open && factionId) {
@@ -69,14 +78,69 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
     }
   }, [open, factionId, lang]);
 
-  const handleAccordionChange = (panel: number) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
-    if (isMobile) {
-      setExpandedSections(prev => 
-        isExpanded 
-          ? [...prev, panel]
-          : prev.filter(section => section !== panel)
-      );
+  const handleAddRule = async () => {
+    setAddError('');
+    if (!newRuleTitle.trim() || !newRuleText.trim()) {
+      setAddError('Les deux champs sont obligatoires.');
+      return;
     }
+    // Générer un slug pour la clé
+    const slug = newRuleTitle.trim().toLowerCase().replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
+    const nameKey = `rules.army.${slug}.name`;
+    const textKey = `rules.army.${slug}.rule.0.text`;
+    // Log de debug
+    console.log('Slug généré:', slug);
+    console.log('Clé nameKey:', nameKey);
+    console.log('Clé textKey:', textKey);
+    // Persister dans le flat de la faction courante ET dans les autres langues
+    const languages = ['fr', 'en'];
+    for (const l of languages) {
+      const flatKey = `${factionId}_flat_${l}`;
+      let bloc = datasource[flatKey] || {};
+      bloc = {
+        ...bloc,
+        [nameKey]: l === lang ? newRuleTitle : nameKey,
+        [textKey]: l === lang ? newRuleText : textKey,
+      };
+      await saveDatasourceBloc(flatKey, bloc);
+      // Mettre à jour le datasource local pour éviter les incohérences
+      datasource[flatKey] = bloc;
+    }
+    setDatasource({ ...datasource });
+
+    // Sauvegarder dans le format structuré de la faction
+    const factionKey = `${factionId}_translated`;
+    let factionBloc = datasource[factionKey] || {};
+    if (!factionBloc.rules) {
+      factionBloc.rules = { army: [] };
+    }
+    if (!factionBloc.rules.army) {
+      factionBloc.rules.army = [];
+    }
+    
+    const newArmyRule: ArmyRule = {
+      name: nameKey, // clé de traduction
+      order: rules.length,
+      rule: [
+        {
+          order: 0,
+          text: textKey, // clé de traduction
+          type: 'text',
+        },
+      ],
+    };
+    
+    factionBloc.rules.army = [...factionBloc.rules.army, newArmyRule];
+    await saveDatasourceBloc(factionKey, factionBloc);
+    setDatasource({ ...datasource, [factionKey]: factionBloc });
+
+    // Mettre à jour l'état local
+    setRules([...rules, newArmyRule]);
+    setAddMode(false);
+    setNewRuleTitle('');
+    setNewRuleText('');
+    // Rafraîchir le datasource global pour garantir la fraîcheur des traductions
+    await refreshDatasource();
   };
 
   if (!open) return null;
@@ -183,6 +247,7 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
                   }}
                 >
                   <AccordionSummary 
+                    component="div"
                     sx={{ 
                       cursor: 'default',
                       '&:hover': {
@@ -211,6 +276,38 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
             <Typography sx={{ color: 'text.secondary', textAlign: 'center' }}>
               Aucune règle d'armée disponible pour cette faction.
             </Typography>
+          )}
+          {addMode ? (
+            <Box sx={{ mt: 2, mb: 2, p: 2, border: '1px solid', borderColor: 'primary.main', borderRadius: 2, bgcolor: 'background.paper' }}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Ajouter une règle d'armée</Typography>
+              <TextField
+                label="Titre de la règle"
+                value={newRuleTitle}
+                onChange={e => setNewRuleTitle(e.target.value)}
+                fullWidth
+                required
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                label="Texte de la règle"
+                value={newRuleText}
+                onChange={e => setNewRuleText(e.target.value)}
+                fullWidth
+                required
+                multiline
+                minRows={2}
+                sx={{ mb: 2 }}
+              />
+              {addError && <Typography color="error" sx={{ mb: 1 }}>{addError}</Typography>}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button variant="contained" color="primary" onClick={handleAddRule}>Ajouter</Button>
+                <Button variant="outlined" onClick={() => { setAddMode(false); setAddError(''); }}>Annuler</Button>
+              </Box>
+            </Box>
+          ) : (
+            <Button variant="outlined" color="primary" sx={{ mt: 2, mb: 2, color: 'text.primary' }} onClick={() => setAddMode(true)}>
+              Ajouter une règle d'armée
+            </Button>
           )}
         </Box>
       </DialogContent>

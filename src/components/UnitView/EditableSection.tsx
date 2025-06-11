@@ -50,22 +50,22 @@ const EditableSection: React.FC<EditableSectionProps> = ({
         if (isComplexObject && typeof item === 'object') {
           const obj: any = {};
           Object.entries(item).forEach(([key, value]) => {
-            obj[key] = translate(value as string, '');
+            obj[key] = translate(value as string, factionId);
           });
           return obj;
         } else {
-          return translate(item, '');
+          return translate(item, factionId);
         }
       });
     }
     if (isComplexObject && typeof content === 'object') {
       const obj: any = {};
       Object.entries(content).forEach(([key, value]) => {
-        obj[key] = translate(value as string, '');
+        obj[key] = translate(value as string, factionId);
       });
       return obj;
     }
-    return translate(content, '');
+    return translate(content, factionId);
   };
 
   // Quand on passe en mode édition, on affiche la traduction
@@ -115,10 +115,10 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       for (const k of Object.keys(datasource)) {
         if (k.endsWith(`_flat_${lang}`) && datasource[k]) {
           if (keys.some(key => key in datasource[k])) {
-            blocKey = k;
-            break;
-          }
+          blocKey = k;
+          break;
         }
+      }
       }
     }
     if (!blocKey) {
@@ -155,7 +155,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   <TextField
                     key={key}
                     label={key}
-                    value={editedContent[idx]?.[key] ?? translate(value as string, '')}
+                    value={editedContent[idx]?.[key] ?? translate(value as string, factionId)}
                     onChange={e => {
                       const newContent = [...editedContent];
                       newContent[idx] = { ...newContent[idx], [key]: e.target.value };
@@ -181,7 +181,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
               <TextField
                 key={key}
                 label={key}
-                value={editedContent[key] ?? translate(value as string, '')}
+                value={editedContent[key] ?? translate(value as string, factionId)}
                 onChange={e => setEditedContent({ ...editedContent, [key]: e.target.value })}
                 size="small"
                 fullWidth
@@ -198,7 +198,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
           {content.map((item: any, idx: number) => (
             <TextField
               key={idx}
-              value={editedContent[idx] ?? translate(item as string, '')}
+              value={editedContent[idx] ?? translate(item as string, factionId)}
               onChange={e => {
                 const newContent = [...editedContent];
                 newContent[idx] = e.target.value;
@@ -215,7 +215,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     // String simple
     return (
       <TextField
-        value={editedContent ?? translate(content as string, '')}
+        value={editedContent ?? translate(content as string, factionId)}
         onChange={e => setEditedContent(e.target.value)}
         size="small"
         fullWidth
@@ -255,11 +255,11 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                           <Box key={key} sx={{ mb: 0.5 }}>
                             {key === 'name' ? (
                               <Typography sx={{ fontWeight: 700 }}>
-                                <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                                <ReactMarkdown>{translate(value as string, factionId)}</ReactMarkdown>
                               </Typography>
                             ) : (
                               <Typography sx={{ fontSize: '0.95em', color: '#444' }}>
-                                <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                                <ReactMarkdown>{translate(value as string, factionId)}</ReactMarkdown>
                               </Typography>
                             )}
                           </Box>
@@ -272,7 +272,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                 })
               ) : Array.isArray(content) ? (
                 content.map((item: any, idx: number) => (
-                  <ReactMarkdown key={idx}>{translate(item as string, '')}</ReactMarkdown>
+                  <ReactMarkdown key={idx}>{translate(item as string, factionId)}</ReactMarkdown>
                 ))
               ) : typeof content === 'object' && content !== null ? (
                 (() => {
@@ -283,11 +283,11 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                       <Box key={key} sx={{ mb: 0.5 }}>
                         {key === 'name' ? (
                           <Typography sx={{ fontWeight: 700 }}>
-                            <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                            <ReactMarkdown>{translate(value as string, factionId)}</ReactMarkdown>
                           </Typography>
                         ) : (
                           <Typography sx={{ fontSize: '0.95em', color: '#444' }}>
-                            <ReactMarkdown>{translate(value as string, '')}</ReactMarkdown>
+                            <ReactMarkdown>{translate(value as string, factionId)}</ReactMarkdown>
                           </Typography>
                         )}
                       </Box>
@@ -297,7 +297,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
                   );
                 })()
               ) : (
-                <ReactMarkdown>{translate(content as string, '')}</ReactMarkdown>
+                <ReactMarkdown>{translate(content as string, factionId)}</ReactMarkdown>
               )}
             </Box>
             <IconButton size="small" onClick={handleEdit} sx={{ color: 'inherit', ml: 1 }}>
