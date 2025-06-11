@@ -19,6 +19,7 @@ interface EditableSectionProps {
   onSave?: (newContent: any) => void;
   isArray?: boolean;
   isComplexObject?: boolean;
+  factionId: string;
 }
 
 const FIELDS_TO_DISPLAY = ['name', 'description', 'range', 'text'];
@@ -30,7 +31,8 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   content,
   onSave,
   isArray = false,
-  isComplexObject = false
+  isComplexObject = false,
+  factionId
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState<any>(content);
@@ -99,15 +101,22 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       values = [editedContent];
     }
 
+    // Nouvelle logique : on privilégie le bloc flat de la faction
     let blocKey = '';
-    for (const k of Object.keys(datasource)) {
-      if (k.endsWith(`_flat_${lang}`) && datasource[k] && keys.some(key => key in datasource[k])) {
-        blocKey = k;
-        break;
+    const flatKeyPrefix = factionId ? `${factionId}_flat_${lang}` : '';
+    if (flatKeyPrefix && datasource[flatKeyPrefix]) {
+      blocKey = flatKeyPrefix;
+    } else {
+      // fallback sur l'ancienne logique
+      for (const k of Object.keys(datasource)) {
+        if (k.endsWith(`_flat_${lang}`) && datasource[k] && keys.some(key => key in datasource[k])) {
+          blocKey = k;
+          break;
+        }
       }
-    }
-    if (!blocKey) {
-      blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+      if (!blocKey) {
+        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+      }
     }
     if (!blocKey) {
       alert('Impossible de trouver le fichier de langue à modifier.');

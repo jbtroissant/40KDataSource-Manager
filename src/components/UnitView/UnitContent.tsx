@@ -84,48 +84,44 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     setIsEditing(true);
   };
 
+  // Fonction utilitaire pour collecter toutes les paires clé brute / valeur traduite à persister
+  const collectTranslationPairs = (original: any, edited: any, pairs: {key: string, value: string}[] = []) => {
+    if (Array.isArray(original) && Array.isArray(edited)) {
+      for (let i = 0; i < original.length; i++) {
+        collectTranslationPairs(original[i], edited[i], pairs);
+      }
+    } else if (typeof original === 'object' && original !== null && typeof edited === 'object' && edited !== null) {
+      for (const k of Object.keys(original)) {
+        if (typeof original[k] === 'string' && typeof edited[k] === 'string') {
+          pairs.push({ key: original[k], value: edited[k] });
+        } else {
+          collectTranslationPairs(original[k], edited[k], pairs);
+        }
+      }
+    } else if (typeof original === 'string' && typeof edited === 'string') {
+      pairs.push({ key: original, value: edited });
+    }
+    return pairs;
+  };
+
   // Sauvegarde la traduction dans le fichier flat de la langue en cours
   const handleSave = async () => {
-    // On doit retrouver la clé brute pour chaque champ édité
-    let keys: string[] = [];
-    let values: string[] = [];
-    if (isArray) {
-      if (isComplexObject) {
-        // Tableau d'objets
-        content.forEach((item: any, idx: number) => {
-          Object.entries(item).forEach(([key, value], kidx) => {
-            keys.push(value as string);
-            values.push(editedContent[idx][key]);
-          });
-        });
-      } else {
-        // Tableau de clés
-        content.forEach((item: any, idx: number) => {
-          keys.push(item);
-          values.push(editedContent[idx]);
-        });
-      }
-    } else if (isComplexObject && typeof content === 'object') {
-      Object.entries(content).forEach(([key, value]) => {
-        keys.push(value as string);
-        values.push(editedContent[key]);
-      });
-    } else {
-      keys = [content];
-      values = [editedContent];
+    // Collecter toutes les paires clé brute / valeur traduite à persister
+    const pairs = collectTranslationPairs(content, editedContent);
+    if (pairs.length === 0) {
+      setIsEditing(false);
+      if (onSave) onSave(editedContent);
+      return;
     }
-
-    // On déduit le bloc à modifier à partir de la clé (ex: DA_flat_fr)
-    // On prend le premier bloc flat du datasource qui contient la clé
+    // Trouver le bloc flat à modifier
     let blocKey = '';
     for (const k of Object.keys(datasource)) {
-      if (k.endsWith(`_flat_${lang}`) && datasource[k] && keys.some(key => key in datasource[k])) {
+      if (k.endsWith(`_flat_${lang}`) && datasource[k] && pairs.some(pair => pair.key in datasource[k])) {
         blocKey = k;
         break;
       }
     }
     if (!blocKey) {
-      // fallback: premier bloc flat de la langue
       blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
     }
     if (!blocKey) {
@@ -136,8 +132,8 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     // Charger le bloc
     const bloc = await loadDatasourceBloc(blocKey);
     // Modifier les valeurs
-    keys.forEach((key, idx) => {
-      bloc[key] = values[idx];
+    pairs.forEach(({key, value}) => {
+      bloc[key] = value;
     });
     // Sauvegarder
     await saveDatasourceBloc(blocKey, bloc);
@@ -145,6 +141,7 @@ const EditableSection: React.FC<EditableSectionProps> = ({
     const newDatasource = { ...datasource, [blocKey]: bloc };
     setDatasource(newDatasource);
     setIsEditing(false);
+    if (onSave) onSave(editedContent);
   };
 
   const handleCancel = () => {

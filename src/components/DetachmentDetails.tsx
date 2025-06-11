@@ -381,10 +381,12 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                       <EditableSection
                         content={rule.name}
                         onSave={handleSectionSave}
+                        factionId={faction.id}
                       />
                       <EditableSection
                         content={rule.rule[0]?.text || ''}
                         onSave={handleSectionSave}
+                        factionId={faction.id}
                       />
                     </Box>
                   ))
@@ -431,6 +433,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                           <EditableSection
                             content={enhancement.name}
                             onSave={handleSectionSave}
+                            factionId={enhancement.faction_id || faction.id}
                           />
                           <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
                             {enhancement.cost} Pts
@@ -439,6 +442,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                         <EditableSection
                           content={enhancement.description}
                           onSave={handleSectionSave}
+                          factionId={enhancement.faction_id || faction.id}
                         />
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                           {enhancement.keywords.map((keyword: string, idx: number) => (
@@ -515,6 +519,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                             <EditableSection
                               content={stratagem.name}
                               onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_name`)}
+                              factionId={stratagem.faction_id || faction.id}
                             />
                           </Box>
                           <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
@@ -530,6 +535,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                             <EditableSection
                               content={stratagem.effect}
                               onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_effect`)}
+                              factionId={stratagem.faction_id || faction.id}
                             />
                           </Box>
 
@@ -541,6 +547,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                               <EditableSection
                                 content={stratagem.fluff}
                                 onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_fluff`)}
+                                factionId={stratagem.faction_id || faction.id}
                               />
                             </Box>
                           )}
@@ -553,6 +560,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                               <EditableSection
                                 content={stratagem.when}
                                 onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_when`)}
+                                factionId={stratagem.faction_id || faction.id}
                               />
                             </Box>
                           )}
@@ -565,6 +573,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                               <EditableSection
                                 content={stratagem.target}
                                 onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_target`)}
+                                factionId={stratagem.faction_id || faction.id}
                               />
                             </Box>
                           )}
@@ -577,6 +586,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                               <EditableSection
                                 content={stratagem.restrictions}
                                 onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_restrictions`)}
+                                factionId={stratagem.faction_id || faction.id}
                               />
                             </Box>
                           )}
@@ -767,10 +777,12 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                     <EditableSection
                       content={rule.name}
                       onSave={handleSectionSave}
+                      factionId={faction.id}
                     />
                     <EditableSection
                       content={rule.rule[0]?.text || ''}
                       onSave={handleSectionSave}
+                      factionId={faction.id}
                     />
                   </Box>
                 ))
@@ -855,6 +867,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                         <EditableSection
                           content={enhancement.name}
                           onSave={handleSectionSave}
+                          factionId={enhancement.faction_id || faction.id}
                         />
                         <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
                           {enhancement.cost} Pts
@@ -863,6 +876,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                       <EditableSection
                         content={enhancement.description}
                         onSave={handleSectionSave}
+                        factionId={enhancement.faction_id || faction.id}
                       />
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                         {enhancement.keywords.map((keyword: string, idx: number) => (
@@ -984,6 +998,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                         <EditableSection
                           content={stratagem.name}
                           onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_name`)}
+                          factionId={stratagem.faction_id || faction.id}
                         />
                       </Box>
                       <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 'bold' }}>
@@ -999,6 +1014,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                         <EditableSection
                           content={stratagem.effect}
                           onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_effect`)}
+                          factionId={stratagem.faction_id || faction.id}
                         />
                       </Box>
 
@@ -1010,6 +1026,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                           <EditableSection
                             content={stratagem.fluff}
                             onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_fluff`)}
+                            factionId={stratagem.faction_id || faction.id}
                           />
                         </Box>
                       )}
@@ -1022,6 +1039,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                           <EditableSection
                             content={stratagem.when}
                             onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_when`)}
+                            factionId={stratagem.faction_id || faction.id}
                           />
                         </Box>
                       )}
@@ -1034,6 +1052,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                           <EditableSection
                             content={stratagem.target}
                             onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_target`)}
+                            factionId={stratagem.faction_id || faction.id}
                           />
                         </Box>
                       )}
@@ -1046,6 +1065,7 @@ const DetachmentDetails: React.FC<DetachmentDetailsProps> = ({ open, onClose, de
                           <EditableSection
                             content={stratagem.restrictions}
                             onSave={(newContent) => handleSectionSave(newContent, `stratagem_${index}_restrictions`)}
+                            factionId={stratagem.faction_id || faction.id}
                           />
                         </Box>
                       )}
