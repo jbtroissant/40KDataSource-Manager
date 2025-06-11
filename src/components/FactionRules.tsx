@@ -23,7 +23,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTranslate } from '../services/translationService';
 import EditableSection from './UnitView/EditableSection';
 import ReactMarkdown from 'react-markdown';
-import { useDatasource } from '../contexts/DatasourceContext';
 
 interface FactionRulesProps {
   open: boolean;
@@ -45,7 +44,6 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
   const [newRuleTitle, setNewRuleTitle] = useState('');
   const [newRuleText, setNewRuleText] = useState('');
   const [addError, setAddError] = useState('');
-  const { refreshDatasource } = useDatasource();
 
   useEffect(() => {
     if (open && factionId) {
@@ -139,8 +137,6 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
     setAddMode(false);
     setNewRuleTitle('');
     setNewRuleText('');
-    // Rafraîchir le datasource global pour garantir la fraîcheur des traductions
-    await refreshDatasource();
   };
 
   if (!open) return null;

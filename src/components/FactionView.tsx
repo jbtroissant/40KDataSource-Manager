@@ -187,24 +187,35 @@ const FactionView: React.FC = () => {
           flex: 1,
           height: isMobile ? '50%' : '100%',
           overflow: 'auto',
-          bgcolor: 'background.default'
+          bgcolor: 'background.default',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          p: 2
         }}>
           {selectedDatasheet ? (
-            <UnitCard
-              unit={selectedDatasheet}
-              army={{
-                faction: factionName,
-                factionId: factionId
-              }}
-              isBattleMode={false}
-              onUnitDeleted={handleDatasheetDeleted}
-            />
+            <Box sx={{ 
+              width: '100%',
+              maxWidth: '1080px',
+              mx: 'auto'
+            }}>
+              <UnitCard
+                unit={selectedDatasheet}
+                army={{
+                  faction: factionName,
+                  factionId: factionId
+                }}
+                isBattleMode={false}
+                onUnitDeleted={handleDatasheetDeleted}
+              />
+            </Box>
           ) : (
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              height: '100%'
+              height: '100%',
+              width: '100%'
             }}>
               <Box sx={{ 
                 textAlign: 'center',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, useTheme, useMediaQuery, Checkbox, Chip, TextField, IconButton } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Checkbox, Chip, TextField, IconButton, FormControlLabel } from '@mui/material';
 import { Weapon } from '../../types/weapon';
 import StatEditPopup from '../CoreComponents/StatEditPopup';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -260,33 +260,87 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
     const newWeapons = [...weapons];
     const profile = newWeapons[weaponIndex].profiles[profileIndex];
     const nameKey = profile.name;
+    
     // Trouver le bloc flat à modifier
     let blocKey = '';
     if (datasource) {
-      for (const k of Object.keys(datasource)) {
-        if (k.endsWith(`_flat_${lang}`) && datasource[k] && nameKey in datasource[k]) {
-          blocKey = k;
-          break;
+      // D'abord chercher dans le bloc flat de la faction courante
+      const factionFlatKey = `${factionId}_flat_${lang}`;
+      if (datasource[factionFlatKey]) {
+        blocKey = factionFlatKey;
+      } else {
+        // Si pas trouvé, chercher dans tous les blocs flat
+        for (const k of Object.keys(datasource)) {
+          if (k.endsWith(`_flat_${lang}`) && datasource[k] && nameKey in datasource[k]) {
+            blocKey = k;
+            break;
+          }
         }
       }
+      
+      // Si toujours pas trouvé, créer un nouveau bloc pour la faction
       if (!blocKey) {
-        blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
+        blocKey = factionFlatKey;
       }
     }
+    
     if (!blocKey) {
-      alert('Impossible de trouver le fichier de langue à modifier.');
+      alert('Impossible de trouver ou créer le fichier de langue à modifier.');
       setEditingName(null);
       setEditedName('');
       return;
     }
-    // Charger le bloc
-    const bloc = await loadDatasourceBloc(blocKey);
+
+    // Charger le bloc ou créer un nouveau si nécessaire
+    let bloc = await loadDatasourceBloc(blocKey) || {};
     bloc[nameKey] = editedName;
+    
+    // Sauvegarder le bloc
     await saveDatasourceBloc(blocKey, bloc);
+    
     // Rafraîchir le datasource global
     setDatasource({ ...datasource, [blocKey]: bloc });
+    
+    // Mettre à jour l'état local
     setEditingName(null);
     setEditedName('');
+  };
+
+  const handleHiddenChange = async (weaponIndex: number, profileIndex: number, hidden: boolean) => {
+    const newWeapons = [...weapons];
+    const profile = newWeapons[weaponIndex].profiles[profileIndex];
+    profile.hidden = hidden;
+
+    // Sauvegarder dans le localStorage si nécessaire
+    if (unitId && armyId) {
+      const armies = JSON.parse(localStorage.getItem('army_list') || '[]');
+      const army = armies.find((a: any) => a.armyId === armyId);
+      if (army) {
+        const updatedUnits = army.units.map((u: any) => {
+          if (u.id === unitId) {
+            if (isRanged) {
+              return { ...u, rangedWeapons: newWeapons };
+            } else {
+              return { ...u, meleeWeapons: newWeapons };
+            }
+          }
+          return u;
+        });
+        const updatedArmy = {
+          ...army,
+          units: updatedUnits,
+          updatedAt: new Date().toISOString()
+        };
+        const updatedArmies = armies.map((a: any) => 
+          a.armyId === armyId ? updatedArmy : a
+        );
+        localStorage.setItem('army_list', JSON.stringify(updatedArmies));
+      }
+    }
+
+    if (onWeaponsChange) {
+      onWeaponsChange(newWeapons);
+    }
   };
 
   return (
@@ -511,37 +565,80 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                       }}
                     >
                       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <Typography sx={{
-                          color: isDarkMode ? '#e0e0e0' : 'black',
-                          fontWeight: 700,
-                          fontSize: '1rem',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}>
-                          {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
-                            <>
-                              <TextField
-                                value={editedName}
-                                onChange={e => setEditedName(e.target.value)}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Typography sx={{
+                            color: isDarkMode ? '#e0e0e0' : 'black',
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
+                              <>
+                                <TextField
+                                  value={editedName}
+                                  onChange={e => setEditedName(e.target.value)}
+                                  size="small"
+                                  variant="standard"
+                                  sx={{ mr: 1, minWidth: 120 }}
+                                />
+                                <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
+                              </>
+                            ) : (
+                              <>
+                                {translate(profile.name, factionId)}
+                                <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
+                              </>
+                            )}
+                          </Typography>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={profile.hidden || false}
+                                onChange={(e) => handleHiddenChange(weaponIndex, profileIndex, e.target.checked)}
                                 size="small"
-                                variant="standard"
-                                sx={{ mr: 1, minWidth: 120 }}
                               />
-                              <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
-                            </>
-                          ) : (
-                            <>
-                              {translate(profile.name, factionId)}
-                              <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
-                            </>
-                          )}
-                        </Typography>
+                            }
+                            label="Caché"
+                            sx={{
+                              '& .MuiFormControlLabel-label': {
+                                fontSize: '0.75rem',
+                                color: isDarkMode ? '#e0e0e0' : 'black',
+                              }
+                            }}
+                          />
+                        </Box>
+                        {profile.keywords && profile.keywords.length > 0 && (
+                          <Box sx={{ 
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: 0.5,
+                            mt: 0.5,
+                            mb: 1
+                          }}>
+                            {profile.keywords.map((keyword, index) => (
+                              <Chip
+                                key={index}
+                                label={keyword}
+                                size="small"
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.75rem',
+                                  bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                                  color: isDarkMode ? 'white' : factionColors.header,
+                                  '& .MuiChip-label': {
+                                    px: 1,
+                                  }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        )}
                         <Box sx={{
                           display: 'flex',
                           flexDirection: 'row',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          mt: 1,
                         }}>
                           <Typography sx={{ flex: 1, fontSize: '1rem', color: isStatModified('range', weaponIndex, profileIndex) ? 'primary.main' : (isDarkMode ? '#e0e0e0' : 'black'), textAlign: 'left', fontWeight: 500 }} onClick={() => handleStatClick(null, 'range', 'Portée', weaponIndex, profileIndex)}>
                             {isRanged ? getDisplayValue(profile, 'range') : 'Mêlée'}
@@ -562,32 +659,6 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                             {getDisplayValue(profile, 'damage')}
                           </Typography>
                         </Box>
-                        {profile.keywords && profile.keywords.length > 0 && (
-                          <Box sx={{ 
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 0.5,
-                            mt: 0.5,
-                            pb: 0.5
-                          }}>
-                            {profile.keywords.map((keyword, index) => (
-                              <Chip
-                                key={index}
-                                label={keyword}
-                                size="small"
-                                sx={{
-                                  height: '20px',
-                                  fontSize: '0.75rem',
-                                  bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                                  color: isDarkMode ? 'white' : factionColors.header,
-                                  '& .MuiChip-label': {
-                                    px: 1,
-                                  }
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        )}
                       </Box>
                     </Box>
                   ))}
@@ -644,51 +715,43 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                       mb: profileIndex < profiles.length - 1 ? 0.5 : 0,
                     }}
                   >
-                    <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
-                      {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
-                        <>
-                          <TextField
-                            value={editedName}
-                            onChange={e => setEditedName(e.target.value)}
-                            size="small"
-                            variant="standard"
-                            sx={{ mr: 1, minWidth: 120 }}
-                          />
-                          <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
-                        </>
-                      ) : (
-                        <>
-                          {translate(profile.name, factionId)}
-                          <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
-                        </>
-                      )}
-                      {profile.keywords && profile.keywords.length > 0 && (
-                        <Box sx={{ 
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 0.5,
-                          mt: 0.5,
-                          pb: 0.5
-                        }}>
-                          {profile.keywords.map((keyword, index) => (
-                            <Chip
-                              key={index}
-                              label={keyword}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                        {editingName && editingName.weaponIndex === weaponIndex && editingName.profileIndex === profileIndex ? (
+                          <>
+                            <TextField
+                              value={editedName}
+                              onChange={e => setEditedName(e.target.value)}
                               size="small"
-                              sx={{
-                                height: '20px',
-                                fontSize: '0.75rem',
-                                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                                color: isDarkMode ? 'white' : factionColors.header,
-                                '& .MuiChip-label': {
-                                  px: 1,
-                                }
-                              }}
+                              variant="standard"
+                              sx={{ mr: 1, minWidth: 120 }}
                             />
-                          ))}
-                        </Box>
-                      )}
-                    </Typography>
+                            <IconButton size="small" onClick={() => handleNameSave(weaponIndex, profileIndex)}><SaveIcon fontSize="small" /></IconButton>
+                          </>
+                        ) : (
+                          <>
+                            {translate(profile.name, factionId)}
+                            <IconButton size="small" onClick={() => handleNameEdit(weaponIndex, profileIndex, profile.name)}><EditIcon fontSize="small" /></IconButton>
+                          </>
+                        )}
+                      </Typography>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={profile.hidden || false}
+                            onChange={(e) => handleHiddenChange(weaponIndex, profileIndex, e.target.checked)}
+                            size="small"
+                          />
+                        }
+                        label="Caché"
+                        sx={{
+                          '& .MuiFormControlLabel-label': {
+                            fontSize: '0.75rem',
+                            color: isDarkMode ? '#e0e0e0' : 'black',
+                          }
+                        }}
+                      />
+                    </Box>
                     <Typography sx={{ color: isStatModified('range', weaponIndex, profileIndex) ? 'primary.main' : (isDarkMode ? '#e0e0e0' : 'black'), fontSize: '0.85rem', lineHeight: 1.2 }} onClick={() => handleStatClick(null, 'range', 'Portée', weaponIndex, profileIndex)}>
                       {isRanged ? getDisplayValue(profile, 'range') : 'Mêlée'}
                     </Typography>

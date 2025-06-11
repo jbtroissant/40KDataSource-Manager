@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography, useTheme, IconButton, TextField, Button } from '@mui/material';
+import { Box, Typography, useTheme, IconButton, TextField, Button, FormControlLabel, Checkbox } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -41,6 +41,20 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const translate = useTranslate();
   const { datasource, setDatasource } = useDatasource();
   const { lang } = useLanguage();
+
+  const handleBooleanChange = (key: string, value: boolean) => {
+    if (isComplexObject) {
+      setEditedContent({ ...editedContent, [key]: value });
+    } else if (isArray) {
+      const newContent = editedContent.map((item: any, index: number) => {
+        if (index === parseInt(key)) {
+          return { ...item, value: value };
+        }
+        return item;
+      });
+      setEditedContent(newContent);
+    }
+  };
 
   // Utilitaire pour obtenir la clé brute (ou la liste de clés) à partir du content
   const getKeys = (content: any): string[] => {
@@ -154,33 +168,82 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       return (
         <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {editedContent.map((item: any, index: number) => (
-            <Box component="div" key={index} sx={{ display: 'flex', gap: 1 }}>
+            <Box component="div" key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               {isComplexObject ? (
-                Object.entries(item).map(([key, value]) => (
+                <>
+                  {Object.entries(item).map(([key, value]) => (
+                    typeof value === 'boolean' ? (
+                      <FormControlLabel
+                        key={key}
+                        control={
+                          <Checkbox
+                            checked={value as boolean}
+                            onChange={(e) => {
+                              const newContent = [...editedContent];
+                              newContent[index] = { ...newContent[index], [key]: e.target.checked };
+                              setEditedContent(newContent);
+                            }}
+                            size="small"
+                          />
+                        }
+                        label={key}
+                        sx={{
+                          '& .MuiFormControlLabel-label': {
+                            fontSize: '0.75rem',
+                            color: isDarkMode ? '#e0e0e0' : 'black',
+                          }
+                        }}
+                      />
+                    ) : (
+                      <TextField
+                        key={key}
+                        label={key}
+                        value={String(value)}
+                        onChange={(e) => {
+                          const newContent = [...editedContent];
+                          newContent[index] = { ...newContent[index], [key]: e.target.value };
+                          setEditedContent(newContent);
+                        }}
+                        size="small"
+                        fullWidth
+                      />
+                    )
+                  ))}
+                </>
+              ) : (
+                typeof item === 'boolean' ? (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={item}
+                        onChange={(e) => {
+                          const newContent = [...editedContent];
+                          newContent[index] = e.target.checked;
+                          setEditedContent(newContent);
+                        }}
+                        size="small"
+                      />
+                    }
+                    label={`Option ${index + 1}`}
+                    sx={{
+                      '& .MuiFormControlLabel-label': {
+                        fontSize: '0.75rem',
+                        color: isDarkMode ? '#e0e0e0' : 'black',
+                      }
+                    }}
+                  />
+                ) : (
                   <TextField
-                    key={key}
-                    label={key}
-                    value={String(value)}
+                    value={String(item)}
                     onChange={(e) => {
                       const newContent = [...editedContent];
-                      newContent[index] = { ...newContent[index], [key]: e.target.value };
+                      newContent[index] = e.target.value;
                       setEditedContent(newContent);
                     }}
                     size="small"
                     fullWidth
                   />
-                ))
-              ) : (
-                <TextField
-                  value={String(item)}
-                  onChange={(e) => {
-                    const newContent = [...editedContent];
-                    newContent[index] = e.target.value;
-                    setEditedContent(newContent);
-                  }}
-                  size="small"
-                  fullWidth
-                />
+                )
               )}
             </Box>
           ))}
@@ -192,16 +255,36 @@ const EditableSection: React.FC<EditableSectionProps> = ({
       return (
         <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {Object.entries(editedContent).map(([key, value]) => (
-            <TextField
-              key={key}
-              label={key}
-              value={String(value)}
-              onChange={(e) => {
-                setEditedContent({ ...editedContent, [key]: e.target.value });
-              }}
-              size="small"
-              fullWidth
-            />
+            typeof value === 'boolean' ? (
+              <FormControlLabel
+                key={key}
+                control={
+                  <Checkbox
+                    checked={value as boolean}
+                    onChange={(e) => handleBooleanChange(key, e.target.checked)}
+                    size="small"
+                  />
+                }
+                label={key}
+                sx={{
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.75rem',
+                    color: isDarkMode ? '#e0e0e0' : 'black',
+                  }
+                }}
+              />
+            ) : (
+              <TextField
+                key={key}
+                label={key}
+                value={String(value)}
+                onChange={(e) => {
+                  setEditedContent({ ...editedContent, [key]: e.target.value });
+                }}
+                size="small"
+                fullWidth
+              />
+            )
           ))}
         </Box>
       );
