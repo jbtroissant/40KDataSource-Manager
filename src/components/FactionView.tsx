@@ -52,7 +52,6 @@ const FactionView: React.FC = () => {
 
   const handleAddDatasheet = (datasheet: Datasheet) => {
     // Cette fonction sera utilisée si on veut ajouter la datasheet à une liste d'armée
-    console.log('Datasheet ajoutée:', datasheet);
   };
 
   const handleDetachmentSelect = (detachment: any) => {

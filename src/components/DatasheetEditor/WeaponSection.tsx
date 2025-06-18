@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Switch, FormControlLabel, TextField, IconButton, Checkbox } from '@mui/material';
+import { Box, Typography, Paper, Button, Switch, FormControlLabel, TextField, Checkbox } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
-import TranslationSearchDialog from './TranslationSearchDialog';
 import TranslationKeyField from './TranslationKeyField';
 import { useDatasource } from '../../contexts/DatasourceContext';
 
@@ -49,19 +47,11 @@ const WEAPON_KEYWORDS = [
   'Sustained Hits',
   'Rapid Fire',
   'Anti-',
+  'Devastating Wounds'
 ];
 
 // Mots-clés qui nécessitent une valeur
 const KEYWORDS_WITH_VALUE = ['Anti-', 'Sustained Hits', 'Rapid Fire', 'Melta'];
-
-// Fonction utilitaire pour convertir en snake_case
-function toSnakeCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1_$2')
-    .replace(/\s+/g, '_')
-    .replace(/[^a-zA-Z0-9_]/g, '')
-    .toLowerCase();
-}
 
 const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, title, factionId }) => {
   const { datasource } = useDatasource();
@@ -125,12 +115,6 @@ const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, 
 
   const openSearch = (weaponIndex: number, profileIndex: number) => {
     setSearchDialogOpen({ open: true, weaponIndex, profileIndex });
-  };
-
-  const handleSelectTranslation = (key: string) => {
-    if (typeof searchDialogOpen.weaponIndex === 'number' && typeof searchDialogOpen.profileIndex === 'number') {
-      handleProfileChange(searchDialogOpen.weaponIndex, searchDialogOpen.profileIndex, 'name', key);
-    }
   };
 
   return (
@@ -311,16 +295,6 @@ const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, 
           ))}
         </Box>
       ))}
-      {datasource && (
-        <TranslationSearchDialog
-          open={searchDialogOpen.open}
-          onClose={() => setSearchDialogOpen({ open: false })}
-          onSelect={handleSelectTranslation}
-          translationsFr={datasource[`${factionId}_flat_fr`] || {}}
-          translationsEn={datasource[`${factionId}_flat_en`] || {}}
-          factionId={factionId}
-        />
-      )}
     </Paper>
   );
 };

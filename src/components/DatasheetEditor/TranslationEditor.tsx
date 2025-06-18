@@ -4,6 +4,14 @@ import { Datasheet } from '../../types/datasheet';
 import { useTranslate } from '../../services/translationService';
 import { useDatasource } from '../../contexts/DatasourceContext';
 
+// Liste des mots-clés standards
+const CORE_KEYWORDS = [
+  'Fly', 'Vehicle', 'Mounted', 'Grenades',
+  'Infantry', 'Character', 'Epic Hero', 'Psyker', 'Psychic', 'Precision',
+  'Lethal Hits', 'Aircraft', 'Twin-linked', 'Hover', 'Monster', 'Primarch',
+  'Walker', 'Battleline', 'Smoke', 'Titan', 'Titanic', 'Transport'
+];
+
 interface TranslationEditorProps {
   datasheet: Datasheet;
   factionId: string;
@@ -29,9 +37,8 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     if (datasheet.name) allKeys.push(datasheet.name);
     if (datasheet.fluff) allKeys.push(datasheet.fluff);
     if (datasheet.loadout) allKeys.push(datasheet.loadout);
+    if (datasheet.transport) allKeys.push(datasheet.transport);
     datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
-    if (datasheet.leads?.extra) allKeys.push(datasheet.leads.extra);
-    datasheet.leads?.units?.forEach((unit) => allKeys.push(unit));
     datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
     datasheet.abilities.special.forEach((ability) => {
       if (ability.name) allKeys.push(ability.name);
@@ -56,7 +63,10 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
     datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
     datasheet.composition.forEach((entry) => { if (entry) allKeys.push(entry); });
-    if (datasheet.leadBy) datasheet.leadBy.forEach((lead) => allKeys.push(lead));
+    // Ajout des mots-clés personnalisés
+    (datasheet.keywords || []).filter(k => !CORE_KEYWORDS.some(ck => k.startsWith(ck))).forEach(keyword => allKeys.push(keyword));
+    // Ajout des mots-clés de faction
+    (datasheet.factions || []).forEach(faction => allKeys.push(faction));
 
     // Génère l'objet des traductions attendues
     const expectedTranslations: Record<string, string> = {};
@@ -98,9 +108,8 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               if (datasheet.name) allKeys.push(datasheet.name);
               if (datasheet.fluff) allKeys.push(datasheet.fluff);
               if (datasheet.loadout) allKeys.push(datasheet.loadout);
+              if (datasheet.transport) allKeys.push(datasheet.transport);
               datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
-              if (datasheet.leads?.extra) allKeys.push(datasheet.leads.extra);
-              datasheet.leads?.units?.forEach((unit) => allKeys.push(unit));
               datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
               datasheet.abilities.special.forEach((ability) => {
                 if (ability.name) allKeys.push(ability.name);
@@ -127,7 +136,10 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               datasheet.composition.forEach((entry) => {
                 if (entry) allKeys.push(entry);
               });
-              if (datasheet.leadBy) datasheet.leadBy.forEach((lead) => allKeys.push(lead));
+              // Ajout des mots-clés personnalisés
+              (datasheet.keywords || []).filter(k => !CORE_KEYWORDS.some(ck => k.startsWith(ck))).forEach(keyword => allKeys.push(keyword));
+              // Ajout des mots-clés de faction
+              (datasheet.factions || []).forEach(faction => allKeys.push(faction));
               // DEBUG : Affiche le mapping fr complet et la valeur pour une clé précise
               console.log('DEBUG mapping fr:', datasource && datasource[`${factionId}_flat_fr`]);
               console.log('DEBUG mapping fr pour datasheets.Lion_ElJonson.abilities.primarch.0.abilities.0.name:',

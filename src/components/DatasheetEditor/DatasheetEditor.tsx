@@ -207,8 +207,9 @@ const DatasheetEditor: React.FC = () => {
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="sticky" color="default" elevation={0} sx={{ top: 0, zIndex: 1200 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Barre de menu fixe */}
+      <AppBar position="fixed" color="default" elevation={0} sx={{ zIndex: 1200 }}>
         <Toolbar>
           <Button color="primary" variant="contained" onClick={() => navigate(`/faction/${editedDatasheet.faction_id}`)} sx={{ mr: 2 }}>
             Retour
@@ -222,7 +223,17 @@ const DatasheetEditor: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', position: 'sticky', top: { xs: 56, sm: 64 }, zIndex: 1100, bgcolor: 'background.paper' }}>
+      {/* Onglets fixes sous la barre de menu */}
+      <Box sx={{ 
+        borderBottom: 1, 
+        borderColor: 'divider', 
+        position: 'fixed', 
+        top: { xs: 56, sm: 64 }, 
+        left: 0, 
+        right: 0, 
+        zIndex: 1100, 
+        bgcolor: 'background.paper' 
+      }}>
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="datasheet tabs">
           <Tab label="Structure" />
           <Tab label="Traductions FR" />
@@ -230,33 +241,41 @@ const DatasheetEditor: React.FC = () => {
         </Tabs>
       </Box>
 
-      {activeTab === 0 && (
-        <TabPanel value={activeTab} index={0}>
-          <StructureEditor key={editedDatasheet.id} datasheet={editedDatasheet} onChange={handleStructureChange} />
-        </TabPanel>
-      )}
-      {activeTab === 1 && (
-        <TabPanel value={activeTab} index={1}>
-          <TranslationEditor
-            key={editedDatasheet.id + '-fr'}
-            datasheet={editedDatasheet}
-            factionId={factionId || ''}
-            language="fr"
-            onChange={(translations) => handleTranslationChange('fr', translations)}
-          />
-        </TabPanel>
-      )}
-      {activeTab === 2 && (
-        <TabPanel value={activeTab} index={2}>
-          <TranslationEditor
-            key={editedDatasheet.id + '-en'}
-            datasheet={editedDatasheet}
-            factionId={factionId || ''}
-            language="en"
-            onChange={(translations) => handleTranslationChange('en', translations)}
-          />
-        </TabPanel>
-      )}
+      {/* Contenu principal avec padding pour éviter le chevauchement */}
+      <Box sx={{ 
+        flex: 1, 
+        mt: { xs: '112px', sm: '120px' }, // Hauteur de la barre de menu + onglets
+        overflow: 'auto',
+        height: 'calc(100vh - 112px)' // Hauteur totale moins la hauteur de la barre de menu + onglets
+      }}>
+        {activeTab === 0 && (
+          <TabPanel value={activeTab} index={0}>
+            <StructureEditor key={editedDatasheet.id} datasheet={editedDatasheet} onChange={handleStructureChange} />
+          </TabPanel>
+        )}
+        {activeTab === 1 && (
+          <TabPanel value={activeTab} index={1}>
+            <TranslationEditor
+              key={editedDatasheet.id + '-fr'}
+              datasheet={editedDatasheet}
+              factionId={factionId || ''}
+              language="fr"
+              onChange={(translations) => handleTranslationChange('fr', translations)}
+            />
+          </TabPanel>
+        )}
+        {activeTab === 2 && (
+          <TabPanel value={activeTab} index={2}>
+            <TranslationEditor
+              key={editedDatasheet.id + '-en'}
+              datasheet={editedDatasheet}
+              factionId={factionId || ''}
+              language="en"
+              onChange={(translations) => handleTranslationChange('en', translations)}
+            />
+          </TabPanel>
+        )}
+      </Box>
 
       <Snackbar
         open={showErrors}

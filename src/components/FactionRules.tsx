@@ -86,10 +86,6 @@ const FactionRules: React.FC<FactionRulesProps> = ({ open, onClose, factionId, f
     const slug = newRuleTitle.trim().toLowerCase().replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
     const nameKey = `rules.army.${slug}.name`;
     const textKey = `rules.army.${slug}.rule.0.text`;
-    // Log de debug
-    console.log('Slug généré:', slug);
-    console.log('Clé nameKey:', nameKey);
-    console.log('Clé textKey:', textKey);
     // Persister dans le flat de la faction courante ET dans les autres langues
     const languages = ['fr', 'en'];
     for (const l of languages) {
