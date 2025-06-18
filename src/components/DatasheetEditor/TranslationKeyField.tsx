@@ -61,12 +61,12 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
         <>
           {translationsFr[value] && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, maxWidth: '100%' }}>
-              fr: {translationsFr[value].length > 100 ? translationsFr[value].slice(0, 100) + '...' : translationsFr[value]}
+              fr: {translationsFr[value].length > 300 ? translationsFr[value].slice(0, 300) + '...' : translationsFr[value]}
             </Typography>
           )}
           {translationsEn[value] && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, maxWidth: '100%' }}>
-              en: {translationsEn[value].length > 100 ? translationsEn[value].slice(0, 100) + '...' : translationsEn[value]}
+              en: {translationsEn[value].length > 300 ? translationsEn[value].slice(0, 300) + '...' : translationsEn[value]}
             </Typography>
           )}
         </>

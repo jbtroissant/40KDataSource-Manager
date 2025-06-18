@@ -58,6 +58,11 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
           if (profile.name) existingTranslations[profile.name] = translate(profile.name, factionId);
         });
       });
+      // Abilities other (name et description)
+      datasheet.abilities.other.forEach((ability) => {
+        if (ability.name) existingTranslations[ability.name] = translate(ability.name, factionId);
+        if (ability.description) existingTranslations[ability.description] = translate(ability.description, factionId);
+      });
 
       // On ne met à jour que les traductions qui n'existent pas encore
       const newTranslations = { ...translations };
@@ -101,6 +106,30 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
               // Armes à distance
               datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
+              // Abilities other (name et description)
+              datasheet.abilities.other.forEach((ability) => {
+                if (ability.name) allKeys.push(ability.name);
+                if (ability.description) allKeys.push(ability.description);
+              });
+              // Abilities special (name et description)
+              datasheet.abilities.special.forEach((ability) => {
+                if (ability.name) allKeys.push(ability.name);
+                if (ability.description) allKeys.push(ability.description);
+              });
+              // Abilities wargear (name et description)
+              datasheet.abilities.wargear.forEach((ability) => {
+                if (ability.name) allKeys.push(ability.name);
+                if (ability.description) allKeys.push(ability.description);
+              });
+              // Abilities primarch (name)
+              datasheet.abilities.primarch.forEach((primarch) => {
+                if (primarch.name) allKeys.push(primarch.name);
+                // Sous-capacités du primarch (name et description)
+                (primarch.abilities || []).forEach((sub) => {
+                  if (sub.name) allKeys.push(sub.name);
+                  if (sub.description) allKeys.push(sub.description);
+                });
+              });
               // Dédupliquer et compter les occurrences
               const uniqueKeys = Array.from(new Set(allKeys));
               return uniqueKeys.map((key) => {
