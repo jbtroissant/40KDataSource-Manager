@@ -7,6 +7,7 @@ const theme = createTheme({
       main: '#1976d2',
       light: '#42a5f5',
       dark: '#1565c0',
+      contrastText: '#fff',
     },
     secondary: {
       main: '#9c27b0',
@@ -62,6 +63,14 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: '#ffffff',
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {},
+        containedPrimary: {
+          color: '#fff',
         },
       },
     },

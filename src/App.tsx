@@ -32,6 +32,7 @@ function App() {
       mode,
       primary: {
         main: mode === 'light' ? '#1ba2bd' : '#FFD700',
+        contrastText: '#fff',
       },
       background: {
         default: 'transparent',
@@ -41,11 +42,8 @@ function App() {
     components: {
       MuiButton: {
         styleOverrides: {
-          root: {
-            color: mode === 'light' ? '#2196f3' : '#000000',
-            '& .MuiSvgIcon-root': {
-              color: mode === 'light' ? '#2196f3' : '#000000',
-            },
+          containedPrimary: {
+            color: mode === 'light' ? '#fff' : '#000',
           },
         },
       },
