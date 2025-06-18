@@ -96,6 +96,14 @@ const DatasheetEditor: React.FC = () => {
   };
 
   const handleStructureChange = (newDatasheet: Datasheet) => {
+    // Nettoyage de leads si vide
+    if (
+      newDatasheet.leads &&
+      (!newDatasheet.leads.units || newDatasheet.leads.units.length === 0) &&
+      (!newDatasheet.leads.extra || newDatasheet.leads.extra.trim() === '')
+    ) {
+      delete newDatasheet.leads;
+    }
     setEditedDatasheet(newDatasheet);
   };
 
@@ -224,12 +232,13 @@ const DatasheetEditor: React.FC = () => {
 
       {activeTab === 0 && (
         <TabPanel value={activeTab} index={0}>
-          <StructureEditor datasheet={editedDatasheet} onChange={handleStructureChange} />
+          <StructureEditor key={editedDatasheet.id} datasheet={editedDatasheet} onChange={handleStructureChange} />
         </TabPanel>
       )}
       {activeTab === 1 && (
         <TabPanel value={activeTab} index={1}>
           <TranslationEditor
+            key={editedDatasheet.id + '-fr'}
             datasheet={editedDatasheet}
             factionId={factionId || ''}
             language="fr"
@@ -240,6 +249,7 @@ const DatasheetEditor: React.FC = () => {
       {activeTab === 2 && (
         <TabPanel value={activeTab} index={2}>
           <TranslationEditor
+            key={editedDatasheet.id + '-en'}
             datasheet={editedDatasheet}
             factionId={factionId || ''}
             language="en"

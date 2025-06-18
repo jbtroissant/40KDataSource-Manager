@@ -120,6 +120,10 @@ export interface Datasheet {
   linkedTo?: string;
   isLost?: boolean;
   warlord?: boolean;
+  leads?: {
+    units: string[];
+    extra?: string;
+  };
 } 
 
 export interface LinkedUnit extends Datasheet {
@@ -227,7 +231,8 @@ export const createLinkedUnit = (units: Datasheet[]): LinkedUnit => {
     enhancements: combinedEnhancements,
     linkedUnits: [], // Ne plus stocker les unités liées ici
     isLinked: true,
-    isCombinedUnit: true
+    isCombinedUnit: true,
+    leads: units[0].leads
   };
 
   return linkedUnit;

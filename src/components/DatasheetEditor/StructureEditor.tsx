@@ -105,6 +105,10 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
       const newStats = [...datasheet.stats];
       newStats[searchDialogOpen.index] = { ...newStats[searchDialogOpen.index], name: key };
       handleChange('stats', newStats);
+    } else if (searchDialogOpen.field === 'leadBy' && typeof searchDialogOpen.index === 'number') {
+      const newLeadBy = [...(datasheet.leadBy || [])];
+      newLeadBy[searchDialogOpen.index] = key;
+      handleChange('leadBy', newLeadBy);
     }
     // ...ajouter d'autres cas si besoin (description, etc.)
   };
@@ -253,7 +257,6 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                   label={`Capacité de faction ${idx + 1}`}
                   value={ability}
                   onChange={val => {
-                    if (!val) return;
                     const newFaction = [...datasheet.abilities.faction];
                     newFaction[idx] = val;
                     handleChange('abilities', {
@@ -334,7 +337,7 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                   <DeleteIcon />
                 </IconButton>
               </Box>
-              <Typography variant="subtitle2" sx={{ mb: 2 }}>{`Capacité spéciale ${idx + 1}`}</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>{`Autre capacité ${idx + 1}`}</Typography>
               <TranslationKeyField
                 label={`Nom de la capacité`}
                 value={ability.name}
@@ -437,7 +440,7 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
             </Button>
           </Box>
           {datasheet.abilities.special.length === 0 && (
-            <Typography variant="body2" color="text.secondary">Aucune capacité spéciale (special).</Typography>
+            <Typography variant="body2" color="text.secondary">Aucune capacité spéciale.</Typography>
           )}
           {datasheet.abilities.special.map((ability, idx) => (
             <Paper key={idx} sx={{ p: 2, mb: 3, backgroundColor: 'background.default', border: '1px solid', borderColor: 'divider', position: 'relative' }}>
@@ -457,7 +460,7 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                   <DeleteIcon />
                 </IconButton>
               </Box>
-              <Typography variant="subtitle2" sx={{ mb: 2 }}>{`Capacité spéciale (special) ${idx + 1}`}</Typography>
+              <Typography variant="subtitle2" sx={{ mb: 2 }}>{`Capacité spéciale ${idx + 1}`}</Typography>
               <TranslationKeyField
                 label={`Nom de la capacité`}
                 value={ability.name}
@@ -538,7 +541,7 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
         <Paper sx={{ p: 2, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
-              Capacités wargear
+              Capacités d'équipement
             </Typography>
             <Button
               variant="contained"
@@ -1167,7 +1170,6 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                   label={`Entrée de composition ${idx + 1}`}
                   value={entry}
                   onChange={val => {
-                    if (!val) return;
                     const newComposition = [...datasheet.composition];
                     newComposition[idx] = val;
                     handleChange('composition', newComposition);
@@ -1195,6 +1197,230 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
             </Box>
           ))}
         </Paper>
+
+        {/* Loadout */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Équipement
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ flex: '1 1 100%', minWidth: 200 }}>
+              <TranslationKeyField
+                label="Loadout"
+                value={datasheet.loadout || ''}
+                onChange={val => handleChange('loadout', val)}
+                onSearchClick={() => setSearchDialogOpen({ open: true, field: 'loadout' })}
+                translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                margin="normal"
+                fullWidth
+              />
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Wargear */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
+              Options d'équipement
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ ml: 2 }}
+              onClick={() => {
+                const newWargear = [...datasheet.wargear, ''];
+                handleChange('wargear', newWargear);
+              }}
+              disabled={datasheet.wargear.some(w => !w)}
+            >
+              Ajouter
+            </Button>
+          </Box>
+          {datasheet.wargear.length === 0 && (
+            <Typography variant="body2" color="text.secondary">Aucun équipement disponible.</Typography>
+          )}
+          {datasheet.wargear.map((wargear, idx) => (
+            <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <TranslationKeyField
+                  label={`Équipement ${idx + 1}`}
+                  value={wargear}
+                  onChange={val => {
+                    const newWargear = [...datasheet.wargear];
+                    newWargear[idx] = val;
+                    handleChange('wargear', newWargear);
+                  }}
+                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'wargear', index: idx })}
+                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                  margin="dense"
+                  fullWidth
+                  disabled={false}
+                />
+              </Box>
+              <IconButton
+                color="error"
+                onClick={() => {
+                  const newWargear = [...datasheet.wargear];
+                  newWargear.splice(idx, 1);
+                  handleChange('wargear', newWargear);
+                }}
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          ))}
+        </Paper>
+
+        {/* Leads */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
+              Unités dirigées
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ ml: 2 }}
+              onClick={() => {
+                const newLeads = {
+                  units: [...(datasheet.leads?.units || []), ''],
+                  extra: datasheet.leads?.extra || ''
+                };
+                handleChange('leads', newLeads);
+              }}
+              disabled={datasheet.leads?.units?.some(u => !u)}
+            >
+              Ajouter une unité
+            </Button>
+          </Box>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Unités</Typography>
+            {(!datasheet.leads?.units || datasheet.leads.units.length === 0) && (
+              <Typography variant="body2" color="text.secondary">Aucune unité dirigée.</Typography>
+            )}
+            {(datasheet.leads?.units || []).map((unit, idx) => (
+              <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                <Box sx={{ flex: 1, minWidth: 200 }}>
+                  <TranslationKeyField
+                    label={`Unité dirigée ${idx + 1}`}
+                    value={unit}
+                    onChange={val => {
+                      const newLeads = {
+                        units: [...(datasheet.leads?.units || [])],
+                        extra: datasheet.leads?.extra || ''
+                      };
+                      newLeads.units[idx] = val;
+                      handleChange('leads', newLeads);
+                    }}
+                    onSearchClick={() => setSearchDialogOpen({ open: true, field: 'leads.units', index: idx })}
+                    translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                    translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                    margin="dense"
+                    fullWidth
+                    disabled={false}
+                  />
+                </Box>
+                <IconButton
+                  color="error"
+                  onClick={() => {
+                    const newLeads = {
+                      units: [...(datasheet.leads?.units || [])],
+                      extra: datasheet.leads?.extra || ''
+                    };
+                    newLeads.units.splice(idx, 1);
+                    handleChange('leads', newLeads);
+                  }}
+                  size="small"
+                  sx={{ mt: 1 }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            ))}
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Information supplémentaire</Typography>
+            <TranslationKeyField
+              label="Information supplémentaire"
+              value={datasheet.leads?.extra || ''}
+              onChange={val => {
+                const newLeads = {
+                  units: [...(datasheet.leads?.units || [])],
+                  extra: val
+                };
+                handleChange('leads', newLeads);
+              }}
+              onSearchClick={() => setSearchDialogOpen({ open: true, field: 'leads.extra' })}
+              translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+              translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+              margin="dense"
+              fullWidth
+              disabled={false}
+            />
+          </Box>
+        </Paper>
+
+        {/* leadBy */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
+              Peut être dirigé par
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ ml: 2 }}
+              onClick={() => {
+                const newLeadBy = [...(datasheet.leadBy || []), ''];
+                handleChange('leadBy', newLeadBy);
+              }}
+              disabled={datasheet.leadBy?.some(l => !l)}
+            >
+              Ajouter
+            </Button>
+          </Box>
+          {(!datasheet.leadBy || datasheet.leadBy.length === 0) && (
+            <Typography variant="body2" color="text.secondary">Aucun leader renseigné.</Typography>
+          )}
+          {(datasheet.leadBy || []).map((lead, idx) => (
+            <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <TranslationKeyField
+                  label={`Leader ${idx + 1}`}
+                  value={lead}
+                  onChange={val => {
+                    const newLeadBy = [...(datasheet.leadBy || [])];
+                    newLeadBy[idx] = val;
+                    handleChange('leadBy', newLeadBy);
+                  }}
+                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'leadBy', index: idx })}
+                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                  margin="dense"
+                  fullWidth
+                  disabled={false}
+                />
+              </Box>
+              <IconButton
+                color="error"
+                onClick={() => {
+                  const newLeadBy = [...(datasheet.leadBy || [])];
+                  newLeadBy.splice(idx, 1);
+                  handleChange('leadBy', newLeadBy);
+                }}
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          ))}
+        </Paper>
       </Box>
 
       {/* Dialog de recherche de traduction */}
@@ -1203,7 +1429,45 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
           open={searchDialogOpen.open}
           onClose={() => setSearchDialogOpen({ open: false, field: '', index: undefined, subfield: undefined, subIdx: undefined })}
           onSelect={(key) => {
-            if (searchDialogOpen.field === 'faction' && typeof searchDialogOpen.index === 'number') {
+            // Générique pour tableaux
+            if (
+              typeof searchDialogOpen.index === 'number' &&
+              Array.isArray(datasheet[searchDialogOpen.field as keyof Datasheet])
+            ) {
+              const arr = [...(datasheet[searchDialogOpen.field as keyof Datasheet] as string[])];
+              arr[searchDialogOpen.index] = key;
+              handleChange(searchDialogOpen.field as keyof Datasheet, arr);
+              return;
+            }
+            // Cas spécifiques pour les champs simples
+            if (searchDialogOpen.field === 'datasheet.name') {
+              handleChange('name', key);
+            } else if (searchDialogOpen.field === 'datasheet.fluff') {
+              handleChange('fluff', key);
+            } else if (searchDialogOpen.field === 'loadout') {
+              handleChange('loadout', key);
+            } else if (searchDialogOpen.field === 'leads.extra') {
+              const newLeads = {
+                units: [...(datasheet.leads?.units || [])],
+                extra: key
+              };
+              handleChange('leads', newLeads);
+            } else if (searchDialogOpen.field === 'leads.units' && typeof searchDialogOpen.index === 'number') {
+              const newLeads = {
+                units: [...(datasheet.leads?.units || [])],
+                extra: datasheet.leads?.extra || ''
+              };
+              newLeads.units[searchDialogOpen.index] = key;
+              handleChange('leads', newLeads);
+            } else if (searchDialogOpen.field === 'stat.name' && typeof searchDialogOpen.index === 'number') {
+              const newStats = [...datasheet.stats];
+              newStats[searchDialogOpen.index] = { ...newStats[searchDialogOpen.index], name: key };
+              handleChange('stats', newStats);
+            } else if (searchDialogOpen.field === 'wargear' && typeof searchDialogOpen.index === 'number' && searchDialogOpen.subfield) {
+              const newWargear = [...datasheet.abilities.wargear];
+              newWargear[searchDialogOpen.index] = { ...newWargear[searchDialogOpen.index], [searchDialogOpen.subfield]: key };
+              handleChange('abilities', { ...datasheet.abilities, wargear: newWargear });
+            } else if (searchDialogOpen.field === 'faction' && typeof searchDialogOpen.index === 'number') {
               const newFaction = [...datasheet.abilities.faction];
               newFaction[searchDialogOpen.index] = key;
               handleChange('abilities', { ...datasheet.abilities, faction: newFaction });
@@ -1215,10 +1479,6 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
               const newSpecial = [...datasheet.abilities.special];
               newSpecial[searchDialogOpen.index] = { ...newSpecial[searchDialogOpen.index], [searchDialogOpen.subfield]: key };
               handleChange('abilities', { ...datasheet.abilities, special: newSpecial });
-            } else if (searchDialogOpen.field === 'wargear' && typeof searchDialogOpen.index === 'number' && searchDialogOpen.subfield) {
-              const newWargear = [...datasheet.abilities.wargear];
-              newWargear[searchDialogOpen.index] = { ...newWargear[searchDialogOpen.index], [searchDialogOpen.subfield]: key };
-              handleChange('abilities', { ...datasheet.abilities, wargear: newWargear });
             } else if (searchDialogOpen.field === 'primarch' && typeof searchDialogOpen.index === 'number' && searchDialogOpen.subfield) {
               const newPrimarch = [...datasheet.abilities.primarch];
               newPrimarch[searchDialogOpen.index] = { ...newPrimarch[searchDialogOpen.index], [searchDialogOpen.subfield]: key };
@@ -1240,4 +1500,4 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
   );
 };
 
-export default StructureEditor; 
+export default StructureEditor;

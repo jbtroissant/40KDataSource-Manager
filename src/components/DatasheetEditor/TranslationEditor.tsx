@@ -28,6 +28,10 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     const allKeys: string[] = [];
     if (datasheet.name) allKeys.push(datasheet.name);
     if (datasheet.fluff) allKeys.push(datasheet.fluff);
+    if (datasheet.loadout) allKeys.push(datasheet.loadout);
+    datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
+    if (datasheet.leads?.extra) allKeys.push(datasheet.leads.extra);
+    datasheet.leads?.units?.forEach((unit) => allKeys.push(unit));
     datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
     datasheet.abilities.special.forEach((ability) => {
       if (ability.name) allKeys.push(ability.name);
@@ -52,6 +56,7 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
     datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
     datasheet.composition.forEach((entry) => { if (entry) allKeys.push(entry); });
+    if (datasheet.leadBy) datasheet.leadBy.forEach((lead) => allKeys.push(lead));
 
     // Génère l'objet des traductions attendues
     const expectedTranslations: Record<string, string> = {};
@@ -92,29 +97,26 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               const allKeys: string[] = [];
               if (datasheet.name) allKeys.push(datasheet.name);
               if (datasheet.fluff) allKeys.push(datasheet.fluff);
-              // Abilities
+              if (datasheet.loadout) allKeys.push(datasheet.loadout);
+              datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
+              if (datasheet.leads?.extra) allKeys.push(datasheet.leads.extra);
+              datasheet.leads?.units?.forEach((unit) => allKeys.push(unit));
               datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
               datasheet.abilities.special.forEach((ability) => {
                 if (ability.name) allKeys.push(ability.name);
                 if (ability.description) allKeys.push(ability.description);
               });
-              // Stats
               datasheet.stats.forEach((stat) => stat.name && allKeys.push(stat.name));
-              // Armes de mêlée
               datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
-              // Armes à distance
               datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
-              // Abilities other (name et description)
               datasheet.abilities.other.forEach((ability) => {
                 if (ability.name) allKeys.push(ability.name);
                 if (ability.description) allKeys.push(ability.description);
               });
-              // Abilities wargear (name et description)
               datasheet.abilities.wargear.forEach((ability) => {
                 if (ability.name) allKeys.push(ability.name);
                 if (ability.description) allKeys.push(ability.description);
               });
-              // Abilities primarch (name et sous-capacités)
               datasheet.abilities.primarch.forEach((primarch) => {
                 if (primarch.name) allKeys.push(primarch.name);
                 (primarch.abilities || []).forEach((sub) => {
@@ -122,10 +124,10 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
                   if (sub.description) allKeys.push(sub.description);
                 });
               });
-              // Composition d'unité
               datasheet.composition.forEach((entry) => {
                 if (entry) allKeys.push(entry);
               });
+              if (datasheet.leadBy) datasheet.leadBy.forEach((lead) => allKeys.push(lead));
               // DEBUG : Affiche le mapping fr complet et la valeur pour une clé précise
               console.log('DEBUG mapping fr:', datasource && datasource[`${factionId}_flat_fr`]);
               console.log('DEBUG mapping fr pour datasheets.Lion_ElJonson.abilities.primarch.0.abilities.0.name:',
