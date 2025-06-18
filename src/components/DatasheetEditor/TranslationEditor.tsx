@@ -22,58 +22,53 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
   const translate = useTranslate();
 
   useEffect(() => {
-    if (datasource) {
-      // Charger les traductions existantes
-      const existingTranslations: Record<string, string> = {};
-      
-      // Traductions de base
-      if (datasheet.name) {
-        existingTranslations[datasheet.name] = translate(datasheet.name, factionId);
-      }
-      if (datasheet.fluff) {
-        existingTranslations[datasheet.fluff] = translate(datasheet.fluff, factionId);
-      }
+    if (!datasource) return;
 
-      // Abilities de faction
-      datasheet.abilities.faction.forEach((ability) => {
-        existingTranslations[ability] = translate(ability, factionId);
+    // Collecte de toutes les clés de traduction utilisées dans la datasheet
+    const allKeys: string[] = [];
+    if (datasheet.name) allKeys.push(datasheet.name);
+    if (datasheet.fluff) allKeys.push(datasheet.fluff);
+    datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
+    datasheet.abilities.special.forEach((ability) => {
+      if (ability.name) allKeys.push(ability.name);
+      if (ability.description) allKeys.push(ability.description);
+    });
+    datasheet.abilities.other.forEach((ability) => {
+      if (ability.name) allKeys.push(ability.name);
+      if (ability.description) allKeys.push(ability.description);
+    });
+    datasheet.abilities.wargear.forEach((ability) => {
+      if (ability.name) allKeys.push(ability.name);
+      if (ability.description) allKeys.push(ability.description);
+    });
+    datasheet.abilities.primarch.forEach((primarch) => {
+      if (primarch.name) allKeys.push(primarch.name);
+      (primarch.abilities || []).forEach((sub) => {
+        if (sub.name) allKeys.push(sub.name);
+        if (sub.description) allKeys.push(sub.description);
       });
-      // Abilities spéciales
-      datasheet.abilities.special.forEach((ability) => {
-        existingTranslations[ability.name] = translate(ability.name, factionId);
-      });
-      // Stats
-      datasheet.stats.forEach((stat) => {
-        if (stat.name) existingTranslations[stat.name] = translate(stat.name, factionId);
-      });
-      // Armes de mêlée
-      datasheet.meleeWeapons.forEach((weapon) => {
-        weapon.profiles.forEach((profile) => {
-          if (profile.name) existingTranslations[profile.name] = translate(profile.name, factionId);
-        });
-      });
-      // Armes à distance
-      datasheet.rangedWeapons.forEach((weapon) => {
-        weapon.profiles.forEach((profile) => {
-          if (profile.name) existingTranslations[profile.name] = translate(profile.name, factionId);
-        });
-      });
-      // Abilities other (name et description)
-      datasheet.abilities.other.forEach((ability) => {
-        if (ability.name) existingTranslations[ability.name] = translate(ability.name, factionId);
-        if (ability.description) existingTranslations[ability.description] = translate(ability.description, factionId);
-      });
+    });
+    datasheet.stats.forEach((stat) => stat.name && allKeys.push(stat.name));
+    datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
+    datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
+    datasheet.composition.forEach((entry) => { if (entry) allKeys.push(entry); });
 
-      // On ne met à jour que les traductions qui n'existent pas encore
-      const newTranslations = { ...translations };
-      Object.entries(existingTranslations).forEach(([key, value]) => {
-        if (!translations[key]) {
-          newTranslations[key] = value;
-        }
-      });
-      setTranslations(newTranslations);
+    // Génère l'objet des traductions attendues
+    const expectedTranslations: Record<string, string> = {};
+    allKeys.forEach(key => {
+      expectedTranslations[key] = translate(key, factionId);
+    });
+
+    // Test d'égalité profonde (clés et valeurs)
+    const keys1 = Object.keys(translations);
+    const keys2 = Object.keys(expectedTranslations);
+    const sameKeys = keys1.length === keys2.length && keys1.every(k => keys2.includes(k));
+    const sameValues = sameKeys && keys1.every(k => translations[k] === expectedTranslations[k]);
+    if (!sameValues) {
+      setTranslations(expectedTranslations);
     }
-  }, [datasource, factionId, language, datasheet.id, datasheet.name, datasheet.fluff, datasheet.abilities, datasheet.meleeWeapons, datasheet.rangedWeapons, translate]);
+    // eslint-disable-next-line
+  }, [datasource, factionId, language, datasheet]);
 
   const handleTranslationChange = (key: string, value: string) => {
     const newTranslations = {
@@ -99,7 +94,10 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               if (datasheet.fluff) allKeys.push(datasheet.fluff);
               // Abilities
               datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
-              datasheet.abilities.special.forEach((ability) => allKeys.push(ability.name));
+              datasheet.abilities.special.forEach((ability) => {
+                if (ability.name) allKeys.push(ability.name);
+                if (ability.description) allKeys.push(ability.description);
+              });
               // Stats
               datasheet.stats.forEach((stat) => stat.name && allKeys.push(stat.name));
               // Armes de mêlée
@@ -111,29 +109,32 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
                 if (ability.name) allKeys.push(ability.name);
                 if (ability.description) allKeys.push(ability.description);
               });
-              // Abilities special (name et description)
-              datasheet.abilities.special.forEach((ability) => {
-                if (ability.name) allKeys.push(ability.name);
-                if (ability.description) allKeys.push(ability.description);
-              });
               // Abilities wargear (name et description)
               datasheet.abilities.wargear.forEach((ability) => {
                 if (ability.name) allKeys.push(ability.name);
                 if (ability.description) allKeys.push(ability.description);
               });
-              // Abilities primarch (name)
+              // Abilities primarch (name et sous-capacités)
               datasheet.abilities.primarch.forEach((primarch) => {
                 if (primarch.name) allKeys.push(primarch.name);
-                // Sous-capacités du primarch (name et description)
                 (primarch.abilities || []).forEach((sub) => {
                   if (sub.name) allKeys.push(sub.name);
                   if (sub.description) allKeys.push(sub.description);
                 });
               });
-              // Dédupliquer et compter les occurrences
+              // Composition d'unité
+              datasheet.composition.forEach((entry) => {
+                if (entry) allKeys.push(entry);
+              });
+              // DEBUG : Affiche le mapping fr complet et la valeur pour une clé précise
+              console.log('DEBUG mapping fr:', datasource && datasource[`${factionId}_flat_fr`]);
+              console.log('DEBUG mapping fr pour datasheets.Lion_ElJonson.abilities.primarch.0.abilities.0.name:',
+                datasource && datasource[`${factionId}_flat_fr`] && datasource[`${factionId}_flat_fr`]['datasheets.Lion_ElJonson.abilities.primarch.0.abilities.0.name']);
               const uniqueKeys = Array.from(new Set(allKeys));
               return uniqueKeys.map((key) => {
                 const count = allKeys.filter(k => k === key).length;
+                // Affichage debug : mapping de traduction français pour la clé
+                console.log('DEBUG clé:', key, '=>', translations[key]);
                 return (
                   <TextField
                     key={`translation-key-${key}`}

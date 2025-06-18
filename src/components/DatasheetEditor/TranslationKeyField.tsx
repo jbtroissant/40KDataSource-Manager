@@ -36,8 +36,7 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
   disabled = false,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = snakeCase ? toSnakeCase(e.target.value) : e.target.value;
-    onChange(val);
+    onChange(e.target.value);
   };
 
   return (

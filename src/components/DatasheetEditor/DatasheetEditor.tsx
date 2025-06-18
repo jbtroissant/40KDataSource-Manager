@@ -222,27 +222,31 @@ const DatasheetEditor: React.FC = () => {
         </Tabs>
       </Box>
 
-      <TabPanel value={activeTab} index={0}>
-        <StructureEditor datasheet={editedDatasheet} onChange={handleStructureChange} />
-      </TabPanel>
-
-      <TabPanel value={activeTab} index={1}>
-        <TranslationEditor
-          datasheet={editedDatasheet}
-          factionId={factionId || ''}
-          language="fr"
-          onChange={(translations) => handleTranslationChange('fr', translations)}
-        />
-      </TabPanel>
-
-      <TabPanel value={activeTab} index={2}>
-        <TranslationEditor
-          datasheet={editedDatasheet}
-          factionId={factionId || ''}
-          language="en"
-          onChange={(translations) => handleTranslationChange('en', translations)}
-        />
-      </TabPanel>
+      {activeTab === 0 && (
+        <TabPanel value={activeTab} index={0}>
+          <StructureEditor datasheet={editedDatasheet} onChange={handleStructureChange} />
+        </TabPanel>
+      )}
+      {activeTab === 1 && (
+        <TabPanel value={activeTab} index={1}>
+          <TranslationEditor
+            datasheet={editedDatasheet}
+            factionId={factionId || ''}
+            language="fr"
+            onChange={(translations) => handleTranslationChange('fr', translations)}
+          />
+        </TabPanel>
+      )}
+      {activeTab === 2 && (
+        <TabPanel value={activeTab} index={2}>
+          <TranslationEditor
+            datasheet={editedDatasheet}
+            factionId={factionId || ''}
+            language="en"
+            onChange={(translations) => handleTranslationChange('en', translations)}
+          />
+        </TabPanel>
+      )}
 
       <Snackbar
         open={showErrors}

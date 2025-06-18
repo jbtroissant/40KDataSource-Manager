@@ -447,13 +447,35 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                       }}
                     >
                       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <Typography sx={{
-                          color: isDarkMode ? '#e0e0e0' : 'black',
-                          fontWeight: 700,
-                          fontSize: '1rem',
-                        }}>
-                          {translate(profile.name, factionId)}
-                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                          <Typography sx={{
+                            color: isDarkMode ? '#e0e0e0' : 'black',
+                            fontWeight: 700,
+                            fontSize: '1rem',
+                          }}>
+                            {translate(profile.name, factionId)}
+                          </Typography>
+                          {profile.keywords && profile.keywords.length > 0 && (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5, pb: 0.5 }}>
+                              {profile.keywords.map((keyword, index) => (
+                                <Chip
+                                  key={index}
+                                  label={translate(keyword, 'core')}
+                                  size="small"
+                                  sx={{
+                                    height: '20px',
+                                    fontSize: '0.75rem',
+                                    bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                                    color: isDarkMode ? 'white' : factionColors.header,
+                                    '& .MuiChip-label': {
+                                      px: 1,
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          )}
+                        </Box>
                         <Box sx={{
                           display: 'flex',
                           flexDirection: 'row',
@@ -480,32 +502,6 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                             {getDisplayValue(profile, 'damage')}
                           </Typography>
                         </Box>
-                        {profile.keywords && profile.keywords.length > 0 && (
-                          <Box sx={{ 
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: 0.5,
-                            mt: 0.5,
-                            pb: 0.5
-                          }}>
-                            {profile.keywords.map((keyword, index) => (
-                              <Chip
-                                key={index}
-                                label={translate(keyword, 'core')}
-                                size="small"
-                                sx={{
-                                  height: '20px',
-                                  fontSize: '0.75rem',
-                                  bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                                  color: isDarkMode ? 'white' : factionColors.header,
-                                  '& .MuiChip-label': {
-                                    px: 1,
-                                  }
-                                }}
-                              />
-                            ))}
-                          </Box>
-                        )}
                       </Box>
                     </Box>
                   ))}
@@ -562,35 +558,33 @@ const EditableWeapon: React.FC<EditableWeaponProps> = ({
                       mb: profileIndex < profiles.length - 1 ? 0.5 : 0,
                     }}
                   >
-                    <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
-                      {translate(profile.name, factionId)}
-                      {profile.keywords && profile.keywords.length > 0 && (
-                        <Box sx={{ 
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: 0.5,
-                          mt: 0.5,
-                          pb: 0.5
-                        }}>
-                          {profile.keywords.map((keyword, index) => (
-                            <Chip
-                              key={index}
-                              label={translate(keyword, 'core')}
-                              size="small"
-                              sx={{
-                                height: '20px',
-                                fontSize: '0.75rem',
-                                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                                color: isDarkMode ? 'white' : factionColors.header,
-                                '& .MuiChip-label': {
-                                  px: 1,
-                                }
-                              }}
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
+                          {translate(profile.name, factionId)}
+                        </Typography>
+                        {profile.keywords && profile.keywords.length > 0 && (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5, pb: 0.5 }}>
+                            {profile.keywords.map((keyword, index) => (
+                              <Chip
+                                key={index}
+                                label={translate(keyword, 'core')}
+                                size="small"
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.75rem',
+                                  bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                                  color: isDarkMode ? 'white' : factionColors.header,
+                                  '& .MuiChip-label': {
+                                    px: 1,
+                                  }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
                     <Typography sx={{ color: isStatModified('range', weaponIndex, profileIndex) ? 'primary.main' : (isDarkMode ? '#e0e0e0' : 'black'), fontSize: '0.85rem', lineHeight: 1.2 }} onClick={() => handleStatClick(null, 'range', 'Portée', weaponIndex, profileIndex)}>
                       {isRanged ? getDisplayValue(profile, 'range') : 'Mêlée'}
                     </Typography>

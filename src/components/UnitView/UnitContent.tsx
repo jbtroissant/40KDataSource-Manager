@@ -68,9 +68,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
             ...contentStyle
           }}
         >
-          <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
-            {children}
-          </Typography>
+          {children}
         </Box>
       )}
     </>
@@ -214,9 +212,18 @@ const UnitContent: React.FC<UnitContentProps> = ({
                 {datasheet.abilities.primarch[0].abilities.map((ability, index) => (
                   <Box key={index} sx={{ mb: 1 }}>
                     <Typography sx={{ 
-                      color: isDarkMode ? '#e0e0e0' : 'black' 
-                    }}>
-                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {translate(ability.description, datasheet.faction_id)}
+                      color: isDarkMode ? '#e0e0e0' : 'black',
+                      fontWeight: 'bold',
+                      display: 'inline'
+                    }} component="span">
+                      {translate(ability.name, datasheet.faction_id)}:
+                    </Typography>{' '}
+                    <Typography sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black',
+                      display: 'inline',
+                      fontSize: '0.95em'
+                    }} component="span">
+                      {translate(ability.description, datasheet.faction_id)}
                     </Typography>
                   </Box>
                 ))}
@@ -341,17 +348,20 @@ const UnitContent: React.FC<UnitContentProps> = ({
             >
               {datasheet.abilities && datasheet.abilities.core && datasheet.abilities.core.length > 0 && (
                 <Box sx={{ mb: 2 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold' }}>BASE:</Box> {formatText(datasheet.abilities.core.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                  <Typography component="span" sx={{ fontWeight: 'bold' }}>BASE:</Typography>{' '}
+                  <Typography component="span">{formatText(datasheet.abilities.core.map(a => translate(a, datasheet.faction_id)).join(', '))}</Typography>
                 </Box>
               )}
               {datasheet.abilities && datasheet.abilities.faction && datasheet.abilities.faction.length > 0 && (
                 <Box sx={{ mb: 2 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold', mb: 1 }}>FACTION:</Box> {formatText(datasheet.abilities.faction.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                  <Typography component="span" sx={{ fontWeight: 'bold', mb: 1 }}>FACTION:</Typography>{' '}
+                  <Typography component="span">{formatText(datasheet.abilities.faction.map(a => translate(a, datasheet.faction_id)).join(', '))}</Typography>
                 </Box>
               )}
               {datasheet.abilities && datasheet.abilities.other && datasheet.abilities.other.map((ability, index) => (
                 <Box key={`ability-${index}`} sx={{ mb: 1 }}>
-                    <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {formatText(translate(ability.description, datasheet.faction_id))}
+                  <Typography component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Typography>{' '}
+                  <Typography component="span">{formatText(translate(ability.description, datasheet.faction_id))}</Typography>
                 </Box>
               ))}
             </SectionHeader>
@@ -369,7 +379,7 @@ const UnitContent: React.FC<UnitContentProps> = ({
                     color: isDarkMode ? '#e0e0e0' : 'black',
                     fontSize: '0.85rem',
                     lineHeight: 1.2
-                  }}>
+                  }} component="span">
                     {translate(specialAbility.description, datasheet.faction_id)}
                   </Typography>
                 </SectionHeader>
@@ -386,7 +396,8 @@ const UnitContent: React.FC<UnitContentProps> = ({
               >
                 {datasheet.abilities.wargear.map((item, index) => (
                   <Box key={index} sx={{ mb: 1 }}>
-                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(item.name, datasheet.faction_id)}:</Box> {translate(item.description, datasheet.faction_id)}
+                    <Typography component="span" sx={{ fontWeight: 'bold' }}>{translate(item.name, datasheet.faction_id)}:</Typography>{' '}
+                    <Typography component="span">{translate(item.description, datasheet.faction_id)}</Typography>
                   </Box>
                 ))}
               </SectionHeader>
@@ -422,7 +433,7 @@ const UnitContent: React.FC<UnitContentProps> = ({
                 }
               >
                 {datasheet.abilities.damaged.showDescription && datasheet.abilities.damaged.description && (
-                  <Typography sx={{ 
+                  <Typography component="span" sx={{ 
                     color: isDarkMode ? '#e0e0e0' : 'black',
                     fontSize: '0.85rem',
                     lineHeight: 1.2
@@ -460,15 +471,23 @@ const UnitContent: React.FC<UnitContentProps> = ({
               >
                 {datasheet.enhancements.map((enhancement, index) => (
                   <Box key={index} sx={{ mb: 1 }}>
-                    <Typography sx={{ 
+                    <Typography component="span" sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black',
+                      fontSize: '0.85rem',
+                      lineHeight: 1.5,
+                      fontWeight: 'bold'
+                    }}>
+                      {translate(enhancement.name, datasheet.faction_id)} ({enhancement.cost} pts):
+                    </Typography>{' '}
+                    <Typography component="span" sx={{ 
                       color: isDarkMode ? '#e0e0e0' : 'black',
                       fontSize: '0.85rem',
                       lineHeight: 1.5
                     }}>
-                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(enhancement.name, datasheet.faction_id)} ({enhancement.cost} pts):</Box> {translate(enhancement.description, datasheet.faction_id)}
+                      {translate(enhancement.description, datasheet.faction_id)}
                     </Typography>
                     {enhancement.keywords && enhancement.keywords.length > 0 && (
-                      <Typography sx={{ 
+                      <Typography component="span" sx={{ 
                         fontSize: '0.8rem',
                         color: isDarkMode ? 'white' : factionColors.header,
                         fontStyle: 'italic',

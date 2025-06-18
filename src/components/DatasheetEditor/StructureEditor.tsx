@@ -1137,6 +1137,64 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
           title="Armes à distance"
           factionId={datasheet.faction_id}
         />
+
+        {/* Composition d'unité */}
+        <Paper sx={{ p: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
+              Composition d'unité
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              sx={{ ml: 2 }}
+              onClick={() => {
+                const newComposition = [...datasheet.composition, ''];
+                handleChange('composition', newComposition);
+              }}
+              disabled={datasheet.composition.some(c => !c)}
+            >
+              Ajouter
+            </Button>
+          </Box>
+          {datasheet.composition.length === 0 && (
+            <Typography variant="body2" color="text.secondary">Aucune entrée de composition.</Typography>
+          )}
+          {datasheet.composition.map((entry, idx) => (
+            <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <TranslationKeyField
+                  label={`Entrée de composition ${idx + 1}`}
+                  value={entry}
+                  onChange={val => {
+                    if (!val) return;
+                    const newComposition = [...datasheet.composition];
+                    newComposition[idx] = val;
+                    handleChange('composition', newComposition);
+                  }}
+                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'composition', index: idx })}
+                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                  margin="dense"
+                  fullWidth
+                  disabled={false}
+                />
+              </Box>
+              <IconButton
+                color="error"
+                onClick={() => {
+                  const newComposition = [...datasheet.composition];
+                  newComposition.splice(idx, 1);
+                  handleChange('composition', newComposition);
+                }}
+                size="small"
+                sx={{ mt: 1 }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          ))}
+        </Paper>
       </Box>
 
       {/* Dialog de recherche de traduction */}
