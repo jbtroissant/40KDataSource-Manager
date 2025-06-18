@@ -5,7 +5,8 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useParams } from 'react-router-dom';
+import EditIcon from '@mui/icons-material/Edit';
+import { useParams, useNavigate } from 'react-router-dom';
 import UnitHeader from './UnitHeader';
 import UnitContent from './UnitContent';
 import UnitFooter from './UnitFooter';
@@ -30,6 +31,7 @@ interface UnitCardProps {
 
 const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false, isBattleMode = false, onUnitAdded, onOptionsClick, onUnitUpdated, onBack, onUnitDeleted }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [factionColors, setFactionColors] = useState({ banner: '#6a0e19', header: '#6d5035' });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
@@ -85,6 +87,12 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
   const handleMenuClose = () => {
     setMenuAnchorEl(null);
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleEdit = () => {
+    if (unit && army.factionId) {
+      navigate(`/editor/${army.factionId}/${unit.id}`);
+    }
   };
 
   // Suppression de la datasheet et de ses traductions
@@ -186,6 +194,15 @@ const UnitCard: React.FC<UnitCardProps> = ({ unit, army, isFromArmyList = false,
           zIndex: 10
         }}>
           <Box sx={{ position: 'absolute', right: 8, top: 8, height: '28px', display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Bouton édition */}
+            <Tooltip title="Éditer la datasheet">
+              <IconButton
+                onClick={handleEdit}
+                sx={{ color: 'primary.main', width: '28px', height: '28px' }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             {/* Bouton suppression */}
             <Tooltip title="Supprimer la datasheet">
               <IconButton

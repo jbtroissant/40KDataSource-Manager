@@ -1,13 +1,12 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import { useThemeMode } from './hooks/useThemeMode';
-import { Army } from './types/army';
 import HomePage from './components/HomePage';
 import FactionView from './components/FactionView';
+import DatasheetEditor from './components/DatasheetEditor/DatasheetEditor';
 import clearBackground from './assets/images/clearBackground.png';
 import darkBackground from './assets/images/darkBackground.jpg';
-import { Datasheet } from './types/datasheet';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { VersionService } from './services/versionService';
 import { DatasourceProvider } from './contexts/DatasourceContext';
@@ -84,6 +83,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/faction/:factionId" element={<FactionView />} />
+                  <Route path="/editor/:factionId/:datasheetId" element={<DatasheetEditor />} />
                 </Routes>
               </Router>
             </Box>

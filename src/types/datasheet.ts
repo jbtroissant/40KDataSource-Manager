@@ -57,6 +57,9 @@ export interface Datasheet {
       showAbility: boolean;
       showDescription: boolean;
     }[];
+    feelNoPainValue?: string;
+    scoutValue?: string;
+    deadlyDemiseValue?: string;
   };
   stats: {
     active: boolean;

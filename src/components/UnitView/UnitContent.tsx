@@ -1,310 +1,36 @@
-import React, { useState } from 'react';
-import { Box, Typography, useTheme, IconButton, TextField, Button, FormControlLabel, Checkbox } from '@mui/material';
+import React from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
 import { Datasheet } from '../../types/datasheet';
 import { TextFormatService } from '../../services/textFormatService';
 import EditableWeapon from './EditableWeapon';
 import { useTranslate } from '../../services/translationService';
-import { useDatasource } from '../../contexts/DatasourceContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { saveDatasourceBloc, loadDatasourceBloc } from '../../utils/datasourceDb';
 
-interface EditableSectionProps {
+interface SectionHeaderProps {
   title: string;
   factionColors: {
     banner: string;
     header: string;
   };
   icon?: React.ReactNode;
-  content: any;
-  onSave: (newContent: any) => void;
-  isArray?: boolean;
-  isComplexObject?: boolean;
+  children?: React.ReactNode;
+  contentStyle?: React.CSSProperties;
 }
 
-const EditableSection: React.FC<EditableSectionProps> = ({
-  title,
-  factionColors,
+const SectionHeader: React.FC<SectionHeaderProps> = ({ 
+  title, 
+  factionColors, 
   icon,
-  content,
-  onSave,
-  isArray = false,
-  isComplexObject = false
+  children,
+  contentStyle
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState<any>(content);
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const translate = useTranslate();
-  const { datasource, setDatasource } = useDatasource();
-  const { lang } = useLanguage();
-
-  const handleBooleanChange = (key: string, value: boolean) => {
-    if (isComplexObject) {
-      setEditedContent({ ...editedContent, [key]: value });
-    } else if (isArray) {
-      const newContent = editedContent.map((item: any, index: number) => {
-        if (index === parseInt(key)) {
-          return { ...item, value: value };
-        }
-        return item;
-      });
-      setEditedContent(newContent);
-    }
-  };
-
-  // Utilitaire pour obtenir la clé brute (ou la liste de clés) à partir du content
-  const getKeys = (content: any): string[] => {
-    if (Array.isArray(content)) {
-      return content.map((item: any) => (typeof item === 'object' && item.name ? item.name : item));
-    }
-    if (typeof content === 'object' && content !== null) {
-      return Object.values(content).map((v: any) => v);
-    }
-    return [content];
-  };
-
-  // Utilitaire pour obtenir la traduction à partir de la clé brute
-  const getTranslatedContent = () => {
-    if (isArray) {
-      return content.map((item: any) => {
-        if (isComplexObject && typeof item === 'object') {
-          const obj: any = {};
-          Object.entries(item).forEach(([key, value]) => {
-            obj[key] = translate(value as string, '');
-          });
-          return obj;
-        } else {
-          return translate(item, '');
-        }
-      });
-    }
-    if (isComplexObject && typeof content === 'object') {
-      const obj: any = {};
-      Object.entries(content).forEach(([key, value]) => {
-        obj[key] = translate(value as string, '');
-      });
-      return obj;
-    }
-    return translate(content, '');
-  };
-
-  // Quand on passe en mode édition, on affiche la traduction
-  const handleEdit = () => {
-    setEditedContent(getTranslatedContent());
-    setIsEditing(true);
-  };
-
-  // Fonction utilitaire pour collecter toutes les paires clé brute / valeur traduite à persister
-  const collectTranslationPairs = (original: any, edited: any, pairs: {key: string, value: string}[] = []) => {
-    if (Array.isArray(original) && Array.isArray(edited)) {
-      for (let i = 0; i < original.length; i++) {
-        collectTranslationPairs(original[i], edited[i], pairs);
-      }
-    } else if (typeof original === 'object' && original !== null && typeof edited === 'object' && edited !== null) {
-      for (const k of Object.keys(original)) {
-        if (typeof original[k] === 'string' && typeof edited[k] === 'string') {
-          pairs.push({ key: original[k], value: edited[k] });
-        } else {
-          collectTranslationPairs(original[k], edited[k], pairs);
-        }
-      }
-    } else if (typeof original === 'string' && typeof edited === 'string') {
-      pairs.push({ key: original, value: edited });
-    }
-    return pairs;
-  };
-
-  // Sauvegarde la traduction dans le fichier flat de la langue en cours
-  const handleSave = async () => {
-    // Collecter toutes les paires clé brute / valeur traduite à persister
-    const pairs = collectTranslationPairs(content, editedContent);
-    if (pairs.length === 0) {
-      setIsEditing(false);
-      if (onSave) onSave(editedContent);
-      return;
-    }
-    // Trouver le bloc flat à modifier
-    let blocKey = '';
-    for (const k of Object.keys(datasource)) {
-      if (k.endsWith(`_flat_${lang}`) && datasource[k] && pairs.some(pair => pair.key in datasource[k])) {
-        blocKey = k;
-        break;
-      }
-    }
-    if (!blocKey) {
-      blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
-    }
-    if (!blocKey) {
-      alert('Impossible de trouver le fichier de langue à modifier.');
-      setIsEditing(false);
-      return;
-    }
-    // Charger le bloc
-    const bloc = await loadDatasourceBloc(blocKey);
-    // Modifier les valeurs
-    pairs.forEach(({key, value}) => {
-      bloc[key] = value;
-    });
-    // Sauvegarder
-    await saveDatasourceBloc(blocKey, bloc);
-    // Rafraîchir le datasource global
-    const newDatasource = { ...datasource, [blocKey]: bloc };
-    setDatasource(newDatasource);
-    setIsEditing(false);
-    if (onSave) onSave(editedContent);
-  };
-
-  const handleCancel = () => {
-    setEditedContent(getTranslatedContent());
-    setIsEditing(false);
-  };
-
-  const renderEditContent = () => {
-    if (isArray) {
-      return (
-        <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {editedContent.map((item: any, index: number) => (
-            <Box component="div" key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              {isComplexObject ? (
-                <>
-                  {Object.entries(item).map(([key, value]) => (
-                    typeof value === 'boolean' ? (
-                      <FormControlLabel
-                        key={key}
-                        control={
-                          <Checkbox
-                            checked={value as boolean}
-                            onChange={(e) => {
-                              const newContent = [...editedContent];
-                              newContent[index] = { ...newContent[index], [key]: e.target.checked };
-                              setEditedContent(newContent);
-                            }}
-                            size="small"
-                          />
-                        }
-                        label={key}
-                        sx={{
-                          '& .MuiFormControlLabel-label': {
-                            fontSize: '0.75rem',
-                            color: isDarkMode ? '#e0e0e0' : 'black',
-                          }
-                        }}
-                      />
-                    ) : (
-                      <TextField
-                        key={key}
-                        label={key}
-                        value={String(value)}
-                        onChange={(e) => {
-                          const newContent = [...editedContent];
-                          newContent[index] = { ...newContent[index], [key]: e.target.value };
-                          setEditedContent(newContent);
-                        }}
-                        size="small"
-                        fullWidth
-                      />
-                    )
-                  ))}
-                </>
-              ) : (
-                typeof item === 'boolean' ? (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={item}
-                        onChange={(e) => {
-                          const newContent = [...editedContent];
-                          newContent[index] = e.target.checked;
-                          setEditedContent(newContent);
-                        }}
-                        size="small"
-                      />
-                    }
-                    label={`Option ${index + 1}`}
-                    sx={{
-                      '& .MuiFormControlLabel-label': {
-                        fontSize: '0.75rem',
-                        color: isDarkMode ? '#e0e0e0' : 'black',
-                      }
-                    }}
-                  />
-                ) : (
-                  <TextField
-                    value={String(item)}
-                    onChange={(e) => {
-                      const newContent = [...editedContent];
-                      newContent[index] = e.target.value;
-                      setEditedContent(newContent);
-                    }}
-                    size="small"
-                    fullWidth
-                  />
-                )
-              )}
-            </Box>
-          ))}
-        </Box>
-      );
-    }
-
-    if (isComplexObject) {
-      return (
-        <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {Object.entries(editedContent).map(([key, value]) => (
-            typeof value === 'boolean' ? (
-              <FormControlLabel
-                key={key}
-                control={
-                  <Checkbox
-                    checked={value as boolean}
-                    onChange={(e) => handleBooleanChange(key, e.target.checked)}
-                    size="small"
-                  />
-                }
-                label={key}
-                sx={{
-                  '& .MuiFormControlLabel-label': {
-                    fontSize: '0.75rem',
-                    color: isDarkMode ? '#e0e0e0' : 'black',
-                  }
-                }}
-              />
-            ) : (
-              <TextField
-                key={key}
-                label={key}
-                value={String(value)}
-                onChange={(e) => {
-                  setEditedContent({ ...editedContent, [key]: e.target.value });
-                }}
-                size="small"
-                fullWidth
-              />
-            )
-          ))}
-        </Box>
-      );
-    }
-
-    return (
-      <TextField
-        value={String(editedContent)}
-        onChange={(e) => setEditedContent(e.target.value)}
-        size="small"
-        fullWidth
-        multiline
-      />
-    );
-  };
-
+  
   return (
     <>
       <Box
-        component="div"
         sx={{
           bgcolor: factionColors.header,
           pl: 2,
@@ -327,100 +53,26 @@ const EditableSection: React.FC<EditableSectionProps> = ({
         >
           {icon}
           {title}
-          {!isEditing ? (
-            <IconButton
-              size="small"
-              onClick={handleEdit}
-              sx={{ color: 'white', ml: 1 }}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          ) : (
-            <Box component="div" sx={{ display: 'flex', gap: 1, ml: 1 }}>
-              <IconButton
-                size="small"
-                onClick={handleSave}
-                sx={{ color: 'white' }}
-              >
-                <SaveIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={handleCancel}
-                sx={{ color: 'white' }}
-              >
-                <CancelIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          )}
         </Typography>
       </Box>
-      <Box
-        component="div"
-        sx={{
-          pl: 2,
-          pr: 2,
-          pt: 1,
-          borderBottom: '1px dotted #636567',
-          bgcolor: isDarkMode 
-            ? 'rgba(255, 255, 255, 0.03)' 
-            : 'rgba(0, 0, 0, 0.02)',
-        }}
-      >
-        {isEditing ? (
-          renderEditContent()
-        ) : (
-          <Box sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
-            {Array.isArray(content) && content.length > 0 && typeof content[0] === 'object' ? (
-              content.map((item: any, idx: number) => {
-                const fields = Object.entries(item)
-                  .filter(([k, v]) => typeof v === 'string' && ['name', 'description', 'range', 'text'].includes(k));
-                return (
-                  <Box key={idx} sx={{ mb: 1, p: 1, border: '1px solid #bbb', borderRadius: 1, bgcolor: isDarkMode ? '#222' : '#f5f5f5' }}>
-                    {fields.length > 0 ? (
-                      fields.map(([key, value]) => (
-                        <Box key={key} sx={{ mb: 0.5 }}>
-                          {key === 'name' ? (
-                            <Typography sx={{ fontWeight: 700 }}>{translate(value as string, '')}</Typography>
-                          ) : (
-                            <Typography sx={{ fontSize: '0.95em', color: '#444' }}>{translate(value as string, '')}</Typography>
-                          )}
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography sx={{ fontStyle: 'italic', color: '#888' }}>Aucune donnée textuelle</Typography>
-                    )}
-                  </Box>
-                );
-              })
-            ) : Array.isArray(content) ? (
-              content.map((item: any, idx: number) => (
-                <Typography key={idx}>{translate(item as string, '')}</Typography>
-              ))
-            ) : typeof content === 'object' && content !== null ? (
-              (() => {
-                const fields = Object.entries(content)
-                  .filter(([k, v]) => typeof v === 'string' && ['name', 'description', 'range', 'text'].includes(k));
-                return fields.length > 0 ? (
-                  fields.map(([key, value]) => (
-                    <Box key={key} sx={{ mb: 0.5 }}>
-                      {key === 'name' ? (
-                        <Typography sx={{ fontWeight: 700 }}>{translate(value as string, '')}</Typography>
-                      ) : (
-                        <Typography sx={{ fontSize: '0.95em', color: '#444' }}>{translate(value as string, '')}</Typography>
-                      )}
-                    </Box>
-                  ))
-                ) : (
-                  <Typography sx={{ fontStyle: 'italic', color: '#888' }}>Aucune donnée textuelle</Typography>
-                );
-              })()
-            ) : (
-              <Typography>{translate(content as string, '')}</Typography>
-            )}
-          </Box>
-        )}
-      </Box>
+      {children && (
+        <Box
+          sx={{
+            pl: 2,
+            pr: 2,
+            pt: 1,
+            borderBottom: '1px dotted #636567',
+            bgcolor: isDarkMode 
+              ? 'rgba(255, 255, 255, 0.03)' 
+              : 'rgba(0, 0, 0, 0.02)',
+            ...contentStyle
+          }}
+        >
+          <Typography sx={{ color: isDarkMode ? '#e0e0e0' : 'black', fontSize: '0.85rem', lineHeight: 1.2 }}>
+            {children}
+          </Typography>
+        </Box>
+      )}
     </>
   );
 };
@@ -452,17 +104,13 @@ const UnitContent: React.FC<UnitContentProps> = ({
   // State local pour les armes
   const [rangedWeapons, setRangedWeapons] = React.useState(datasheet.rangedWeapons);
   const [meleeWeapons, setMeleeWeapons] = React.useState(datasheet.meleeWeapons);
-  const [editedDatasheet, setEditedDatasheet] = React.useState(datasheet);
-
-  const { datasource, setDatasource } = useDatasource();
-  const { lang } = useLanguage();
 
   React.useEffect(() => {
     setRangedWeapons(datasheet.rangedWeapons);
     setMeleeWeapons(datasheet.meleeWeapons);
-    setEditedDatasheet(datasheet);
-  }, [datasheet]);
+  }, [datasheet.rangedWeapons, datasheet.meleeWeapons]);
 
+  // Callback pour rafraîchir les armes après modification
   const handleWeaponsChange = () => {
     const armies = JSON.parse(localStorage.getItem('army_list') || '[]');
     const unitId = datasheet.id;
@@ -478,129 +126,11 @@ const UnitContent: React.FC<UnitContentProps> = ({
     }
   };
   
-  const handleSectionSave = (section: string, newContent: any) => {
-    const updatedDatasheet = { ...editedDatasheet };
-    switch (section) {
-      case 'abilities':
-        updatedDatasheet.abilities = newContent;
-        break;
-      case 'wargear':
-        updatedDatasheet.wargear = newContent;
-        break;
-      case 'composition':
-        updatedDatasheet.composition = newContent;
-        break;
-      case 'leader':
-        updatedDatasheet.leader = newContent;
-        break;
-      case 'leadBy':
-        updatedDatasheet.leadBy = newContent;
-        break;
-      case 'transport':
-        updatedDatasheet.transport = newContent;
-        break;
-      case 'enhancements':
-        updatedDatasheet.enhancements = newContent;
-        break;
-    }
-    setEditedDatasheet(updatedDatasheet);
-    
-    // Sauvegarder dans le localStorage
-    const armies = JSON.parse(localStorage.getItem('army_list') || '[]');
-    const army = armies.find((a: any) => a.armyId === armyId);
-    if (army) {
-      const unitIndex = army.units.findIndex((u: any) => u.id === datasheet.id);
-      if (unitIndex !== -1) {
-        army.units[unitIndex] = updatedDatasheet;
-        localStorage.setItem('army_list', JSON.stringify(armies));
-      }
-    }
+  // Fonction utilitaire pour formater les textes avec des retours à la ligne
+  const formatText = (text: string) => {
+    return TextFormatService.formatTextWithLineBreaks(text);
   };
   
-  // Gestion édition primarch
-  const primarchRaw = datasheet.abilities?.primarch;
-  const primarch = Array.isArray(primarchRaw) && primarchRaw.length > 0 && typeof primarchRaw[0] === 'object' && primarchRaw[0] !== null && 'abilities' in primarchRaw[0] && Array.isArray(primarchRaw[0].abilities) && 'name' in primarchRaw[0]
-    ? primarchRaw[0]
-    : null;
-  const [isEditingPrimarch, setIsEditingPrimarch] = React.useState(false);
-  const [editedPrimarch, setEditedPrimarch] = React.useState(primarch ? {
-    name: translate(primarch.name, ''),
-    abilities: primarch.abilities.map((ab: any) => ({
-      name: translate(ab.name, ''),
-      description: translate(ab.description, '')
-    }))
-  } : { name: '', abilities: [] });
-  React.useEffect(() => {
-    if (primarch) {
-      setEditedPrimarch({
-        name: translate(primarch.name, ''),
-        abilities: primarch.abilities.map((ab: any) => ({
-          name: translate(ab.name, ''),
-          description: translate(ab.description, '')
-        }))
-      });
-    }
-  }, [primarch?.name, primarch?.abilities]);
-
-  // Sauvegarde la traduction dans le fichier flat de la langue en cours
-  const handlePrimarchSave = async () => {
-    if (!primarch) return;
-    // Récupérer les clés brutes
-    const nameKey = primarch.name;
-    const abilityKeys = primarch.abilities.map((ab: any) => ({
-      name: ab.name,
-      description: ab.description
-    }));
-    // Trouver le bloc flat
-    let blocKey = '';
-    for (const k of Object.keys(datasource)) {
-      if (k.endsWith(`_flat_${lang}`) && datasource[k] && (
-        [nameKey, ...abilityKeys.map(a => a.name), ...abilityKeys.map(a => a.description)].some(key => key in datasource[k])
-      )) {
-        blocKey = k;
-        break;
-      }
-    }
-    if (!blocKey) {
-      blocKey = Object.keys(datasource).find(k => k.endsWith(`_flat_${lang}`)) || '';
-    }
-    if (!blocKey) {
-      alert('Impossible de trouver le fichier de langue à modifier.');
-      setIsEditingPrimarch(false);
-      return;
-    }
-    const bloc = await loadDatasourceBloc(blocKey);
-    // Mettre à jour les traductions
-    bloc[nameKey] = editedPrimarch.name;
-    abilityKeys.forEach((keys, idx) => {
-      bloc[keys.name] = editedPrimarch.abilities[idx].name;
-      bloc[keys.description] = editedPrimarch.abilities[idx].description;
-    });
-    await saveDatasourceBloc(blocKey, bloc);
-    const updatedPrimarch = { ...primarch, name: nameKey, abilities: primarch.abilities.map((ab: any, idx: number) => ({
-      ...ab,
-      name: abilityKeys[idx].name,
-      description: abilityKeys[idx].description
-    })) };
-    const updatedAbilities = { ...editedDatasheet.abilities, primarch: [{ ...updatedPrimarch }] };
-    setDatasource({ ...datasource, [blocKey]: bloc });
-    handleSectionSave('abilities', updatedAbilities);
-    setIsEditingPrimarch(false);
-  };
-
-  const handlePrimarchCancel = () => {
-    if (primarch) {
-      setEditedPrimarch({
-        name: translate(primarch.name, ''),
-        abilities: primarch.abilities.map((ab: any) => ({
-          name: translate(ab.name, ''),
-          description: translate(ab.description, '')
-        }))
-      });
-    }
-    setIsEditingPrimarch(false);
-  };
-
   return (
     <Box
       sx={{
@@ -625,221 +155,335 @@ const UnitContent: React.FC<UnitContentProps> = ({
           width: 'calc(100% - 4px)',
           bgcolor: isDarkMode ? '#1a1a1a' : 'background.paper',
           clipPath: 'polygon(0 0, 100% 0, 100% 100%, 2% 100%, 0 96%)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          p: 2,
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gridTemplateRows: 'auto auto',
+          gap: 0,
         }}
       >
-        {/* Armes à distance */}
-        <EditableWeapon 
-          weapons={rangedWeapons || []} 
-          factionColors={factionColors} 
-          isRanged={true} 
-          unitId={datasheet.id}
-          armyId={armyId}
-          onWeaponsChange={handleWeaponsChange}
-          isBattleMode={isBattleMode}
-          isFromArmyList={isFromArmyList}
-          factionId={datasheet.faction_id}
-        />
+        {/* Section des armes */}
+        <Box
+          sx={{
+            minHeight: '500px',
+            borderRight: `2px solid ${factionColors.header}`,
+            pt: 2,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            pb: 2,
+          }}
+        >
+          {/* Armes à distance */}
+          {rangedWeapons && rangedWeapons.length > 0 && (
+            <EditableWeapon 
+              weapons={rangedWeapons} 
+              factionColors={factionColors} 
+              isRanged={true} 
+              unitId={datasheet.id}
+              armyId={armyId}
+              onWeaponsChange={handleWeaponsChange}
+              isBattleMode={isBattleMode}
+              isFromArmyList={isFromArmyList}
+              factionId={datasheet.faction_id}
+            />
+          )}
 
-        {/* Armes de mêlée */}
-        <EditableWeapon 
-          weapons={meleeWeapons || []} 
-          factionColors={factionColors} 
-          isRanged={false} 
-          unitId={datasheet.id}
-          armyId={armyId}
-          onWeaponsChange={handleWeaponsChange}
-          isBattleMode={isBattleMode}
-          isFromArmyList={isFromArmyList}
-          factionId={datasheet.faction_id}
-        />
+          {/* Armes de mêlée */}
+          {meleeWeapons && meleeWeapons.length > 0 && (
+            <EditableWeapon 
+              weapons={meleeWeapons} 
+              factionColors={factionColors} 
+              isRanged={false} 
+              unitId={datasheet.id}
+              armyId={armyId}
+              onWeaponsChange={handleWeaponsChange}
+              isBattleMode={isBattleMode}
+              isFromArmyList={isFromArmyList}
+              factionId={datasheet.faction_id}
+            />
+          )}
 
-        {/* Primarch Section */}
-        {primarch && (
-          <Box key="primarch" sx={{ mb: 2 }}>
-            <Box sx={{ bgcolor: factionColors.header, pl: 2, display: 'flex', alignItems: 'center' }}>
-              <Typography sx={{ textTransform: 'uppercase', color: 'white', fontSize: '0.9rem', fontWeight: 600, flex: 1, display: 'flex', alignItems: 'center' }}>
-                APTITUDES DE PRIMARQUE
-              </Typography>
-              {!isEditingPrimarch ? (
-                <IconButton size="small" onClick={() => setIsEditingPrimarch(true)} sx={{ color: 'white' }}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              ) : (
-                <>
-                  <IconButton size="small" onClick={handlePrimarchSave} sx={{ color: 'white' }}>
-                    <SaveIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={handlePrimarchCancel} sx={{ color: 'white' }}>
-                    <CancelIcon fontSize="small" />
-                  </IconButton>
-                </>
-              )}
+          {/* Primarch Section */}
+          {datasheet.abilities && datasheet.abilities.primarch && datasheet.abilities.primarch.length > 0 && datasheet.abilities.primarch[0].abilities && (
+            <Box>
+              <SectionHeader 
+                title={translate(datasheet.abilities.primarch[0].name, datasheet.faction_id)}
+                factionColors={factionColors}
+              >
+                {datasheet.abilities.primarch[0].abilities.map((ability, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black' 
+                    }}>
+                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {translate(ability.description, datasheet.faction_id)}
+                    </Typography>
+                  </Box>
+                ))}
+              </SectionHeader>
             </Box>
-            <Box sx={{ pl: 2, pr: 2, pt: 1, borderBottom: '1px dotted #636567', bgcolor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
-              {!isEditingPrimarch ? (
-                <>
-                  <Typography sx={{ fontWeight: 700, mb: 1 }}>{translate(primarch.name, '')}</Typography>
-                  {primarch.abilities.map((ab: any, idx: number) => (
-                    <Box key={idx} sx={{ mb: 2, p: 1, border: '1px solid #bbb', borderRadius: 1, bgcolor: isDarkMode ? '#222' : '#f5f5f5' }}>
-                      <Typography sx={{ fontWeight: 700 }}>{translate(ab.name, '')}</Typography>
-                      <Typography sx={{ fontSize: '0.95em', color: '#444' }}>{translate(ab.description, '')}</Typography>
+          )}
+
+          {/* Wargear Options */}
+          {datasheet.wargear && datasheet.wargear.length > 0 && (
+            <Box>
+              <SectionHeader 
+                title="OPTIONS D'ÉQUIPEMENT"
+                factionColors={factionColors}
+              >
+                {TextFormatService.formatTextWithTwoColumnOptionsList(
+                  datasheet.wargear.map(w => translate(w, datasheet.faction_id)).join('■')
+                )}
+              </SectionHeader>
+            </Box>
+          )}
+
+          {/* Unit Composition */}
+          {datasheet.composition && datasheet.composition.length > 0 && (
+            <Box>
+              <SectionHeader 
+                title="COMPOSITION DE L'UNITÉ"
+                factionColors={factionColors}
+              >
+                <Typography sx={{ 
+                  color: isDarkMode ? '#e0e0e0' : 'black', 
+                  fontSize: '0.85rem' 
+                }}>
+                  {TextFormatService.formatTextWithLineBreaksList(datasheet.composition.map(a => translate(a, datasheet.faction_id)).join('■'))}
+                </Typography>
+                {datasheet.loadout && (
+                  <Typography sx={{ 
+                    color: isDarkMode ? '#e0e0e0' : 'black', 
+                    fontSize: '0.85rem' 
+                  }}>
+                    {translate(datasheet.loadout, datasheet.faction_id)}
+                  </Typography>
+                )}
+              </SectionHeader>
+            </Box>
+          )}
+
+          {/* Leader */}
+          {datasheet.leader && (
+            <Box>
+              <SectionHeader 
+                title="MENEUR"
+                factionColors={factionColors}
+              >
+                {TextFormatService.formatTextWithLineBreaksList(translate(datasheet.leader, datasheet.faction_id))}
+              </SectionHeader>
+            </Box>
+          )}
+
+          {/* Lead By */}
+          {datasheet.leadBy && (
+            <Box>
+              <SectionHeader 
+                title="Mené par"
+                factionColors={factionColors}
+              >
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 0.5,
+                }}>
+                  {datasheet.leadBy?.map((item, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        borderBottom: index < (datasheet.leadBy?.length || 0) - 1 ? '1px dotted #636567' : 'none',
+                        pb: 0.5,
+                        pt: index > 0 ? 0.5 : 0
+                      }}
+                    >
+                      <Typography 
+                        sx={{ 
+                          color: isDarkMode ? '#e0e0e0' : 'black', 
+                          fontSize: '0.85rem',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        ■ {translate(item, datasheet.faction_id)}
+                      </Typography>
                     </Box>
                   ))}
-                </>
-              ) : (
-                <>
-                  <TextField
-                    label="Nom de l'aptitude de primarque"
-                    value={editedPrimarch.name}
-                    onChange={e => setEditedPrimarch({ ...editedPrimarch, name: e.target.value })}
-                    size="small"
-                    fullWidth
-                    sx={{ mb: 2 }}
-                  />
-                  {editedPrimarch.abilities.map((ab: any, idx: number) => (
-                    <Box key={idx} sx={{ mb: 2, p: 1, border: '1px solid #bbb', borderRadius: 1, bgcolor: isDarkMode ? '#222' : '#f5f5f5' }}>
-                      <TextField
-                        label="Nom de l'aptitude"
-                        value={ab.name}
-                        onChange={e => {
-                          const newAbilities = [...editedPrimarch.abilities];
-                          newAbilities[idx] = { ...newAbilities[idx], name: e.target.value };
-                          setEditedPrimarch({ ...editedPrimarch, abilities: newAbilities });
-                        }}
-                        size="small"
-                        fullWidth
-                        sx={{ mb: 1 }}
-                      />
-                      <TextField
-                        label="Description"
-                        value={ab.description}
-                        onChange={e => {
-                          const newAbilities = [...editedPrimarch.abilities];
-                          newAbilities[idx] = { ...newAbilities[idx], description: e.target.value };
-                          setEditedPrimarch({ ...editedPrimarch, abilities: newAbilities });
-                        }}
-                        size="small"
-                        fullWidth
-                        multiline
-                      />
-                    </Box>
-                  ))}
-                </>
-              )}
+                </Box>
+              </SectionHeader>
             </Box>
-          </Box>
-        )}
+          )}
 
-        {/* Primarch Section */}
-        {datasheet.abilities && Object.entries(datasheet.abilities).map(([key, value]) => {
-          if (key === 'primarch') return null; // On ne veut pas le rendu générique pour primarch
-          // Détection du type de champ
-          const isArray = Array.isArray(value);
-          const isComplexObject = (isArray && value.length > 0 && typeof value[0] === 'object') || (!isArray && typeof value === 'object' && value !== null);
-          // Titre lisible
-          const TITLES: Record<string, string> = {
-            core: 'APTITUDES DE BASE',
-            damaged: 'ENDOMMAGÉ',
-            faction: 'APTITUDES DE FACTION',
-            other: 'AUTRES APTITUDES',
-            special: 'APTITUDES SPÉCIALES',
-            wargear: "APTITUDES D'ÉQUIPEMENT"
-          };
-          return (
-            <EditableSection
-              key={key}
-              title={TITLES[key] || key.toUpperCase()}
+          {/* Transport Section */}
+          {datasheet.transport && (
+            <Box>
+              <SectionHeader 
+                title="TRANSPORT"
+                factionColors={factionColors}
+              >
+                {TextFormatService.formatTextWithLineBreaksList(translate(datasheet.transport, datasheet.faction_id))}
+              </SectionHeader>
+            </Box>
+          )}
+        </Box>
+
+        {/* Section des capacités */}
+        <Box sx={{ 
+          py: 2, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: 2,
+          borderBottom: `2px solid ${factionColors.header}`,
+          height: '100%'
+        }}>
+          <Box>
+            <SectionHeader 
+              title="APTITUDES"
               factionColors={factionColors}
-              content={value}
-              onSave={(newContent) => {
-                const updatedAbilities = { ...editedDatasheet.abilities, [key]: newContent };
-                handleSectionSave('abilities', updatedAbilities);
-              }}
-              isArray={isArray}
-              isComplexObject={isComplexObject}
-            />
-          );
-        })}
+            >
+              {datasheet.abilities && datasheet.abilities.core && datasheet.abilities.core.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <Box component="span" sx={{ fontWeight: 'bold' }}>BASE:</Box> {formatText(datasheet.abilities.core.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                </Box>
+              )}
+              {datasheet.abilities && datasheet.abilities.faction && datasheet.abilities.faction.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <Box component="span" sx={{ fontWeight: 'bold', mb: 1 }}>FACTION:</Box> {formatText(datasheet.abilities.faction.map(a => translate(a, datasheet.faction_id)).join(', '))}
+                </Box>
+              )}
+              {datasheet.abilities && datasheet.abilities.other && datasheet.abilities.other.map((ability, index) => (
+                <Box key={`ability-${index}`} sx={{ mb: 1 }}>
+                    <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(ability.name, datasheet.faction_id)}:</Box> {formatText(translate(ability.description, datasheet.faction_id))}
+                </Box>
+              ))}
+            </SectionHeader>
+          </Box>
 
-        {/* Damaged Abilities */}
-        <EditableSection
-          title="ENDOMAGÉ"
-          factionColors={factionColors}
-          content={datasheet.abilities?.damaged || {}}
-          onSave={(newContent) => handleSectionSave('abilities', {
-            ...editedDatasheet.abilities,
-            damaged: newContent
-          })}
-          isComplexObject={true}
-          icon={
-            <Box
-              sx={{
-                position: 'relative',
-                width: '16px',
-                height: '16px',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  backgroundImage: 'url("https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/svg/Toughness.svg")',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: 'contain',
-                  filter: 'brightness(0) invert(1)',
-                  width: '16px',
-                  height: '16px',
-                },
-              }}
-            />
-          }
-        />
+          {/* Special Abilities Sections */}
+          {datasheet.abilities && datasheet.abilities.special && datasheet.abilities.special.map((specialAbility, index) => (
+            specialAbility.showAbility && (
+              <Box key={`special-${index}`}>
+                <SectionHeader 
+                  title={translate(specialAbility.name, datasheet.faction_id)}
+                  factionColors={factionColors}
+                >
+                  <Typography sx={{ 
+                    color: isDarkMode ? '#e0e0e0' : 'black',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.2
+                  }}>
+                    {translate(specialAbility.description, datasheet.faction_id)}
+                  </Typography>
+                </SectionHeader>
+              </Box>
+            )
+          ))}
 
-        {/* Wargear Options */}
-        <EditableSection
-          title="OPTIONS D'ÉQUIPEMENT"
-          factionColors={factionColors}
-          content={datasheet.wargear || []}
-          onSave={(newContent) => handleSectionSave('wargear', newContent)}
-          isArray={true}
-        />
+          {/* Wargear Abilities Section */}
+          {datasheet.abilities && datasheet.abilities.wargear && datasheet.abilities.wargear.length > 0 && (
+            <Box>
+              <SectionHeader 
+                title="APTITUDES d'ÉQUIPEMENT"
+                factionColors={factionColors}
+              >
+                {datasheet.abilities.wargear.map((item, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(item.name, datasheet.faction_id)}:</Box> {translate(item.description, datasheet.faction_id)}
+                  </Box>
+                ))}
+              </SectionHeader>
+            </Box>
+          )}
 
-        {/* Unit Composition */}
-        <EditableSection
-          title="COMPOSITION DE L'UNITÉ"
-          factionColors={factionColors}
-          content={datasheet.composition || []}
-          onSave={(newContent) => handleSectionSave('composition', newContent)}
-          isArray={true}
-        />
+          {/* Damaged Abilities Section */}
+          {datasheet.abilities && datasheet.abilities.damaged && datasheet.abilities.damaged.showDamagedAbility && (
+            <Box>
+              <SectionHeader 
+                title={`ENDOMAGÉ: ${translate(datasheet.abilities.damaged.range, datasheet.faction_id)}`}
+                factionColors={factionColors}
+                icon={
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      width: '16px',
+                      height: '16px',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        backgroundImage: 'url("https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/svg/Toughness.svg")',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: 'contain',
+                        filter: 'brightness(0) invert(1)',
+                        width: '16px',
+                        height: '16px',
+                      },
+                    }}
+                  />
+                }
+              >
+                {datasheet.abilities.damaged.showDescription && datasheet.abilities.damaged.description && (
+                  <Typography sx={{ 
+                    color: isDarkMode ? '#e0e0e0' : 'black',
+                    fontSize: '0.85rem',
+                    lineHeight: 1.2
+                  }}>
+                    {translate(datasheet.abilities.damaged.description, datasheet.faction_id)}
+                  </Typography>
+                )}
+              </SectionHeader>
+            </Box>
+          )}
 
-        {/* Leader */}
-        <EditableSection
-          title="MENEUR"
-          factionColors={factionColors}
-          content={datasheet.leader || ''}
-          onSave={(newContent) => handleSectionSave('leader', newContent)}
-        />
-
-        {/* Lead By */}
-        <EditableSection
-          title="Mené par"
-          factionColors={factionColors}
-          content={datasheet.leadBy || []}
-          onSave={(newContent) => handleSectionSave('leadBy', newContent)}
-          isArray={true}
-        />
-
-        {/* Transport Section */}
-        <EditableSection
-          title="TRANSPORT"
-          factionColors={factionColors}
-          content={datasheet.transport || ''}
-          onSave={(newContent) => handleSectionSave('transport', newContent)}
-        />
+          {/* Enhancements Section */}
+          {showEnhancements && datasheet.enhancements && datasheet.enhancements.length > 0 && (
+            <Box>
+              <SectionHeader 
+                title="AMÉLIORATIONS"
+                factionColors={factionColors}
+                icon={
+                  <AutoAwesomeIcon 
+                    sx={{ 
+                      color: theme.palette.primary.main,
+                      fontSize: '1.2rem',
+                      animation: 'glow 1.5s ease-in-out infinite alternate',
+                      '@keyframes glow': {
+                        from: {
+                          filter: 'drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.25))',
+                        },
+                        to: {
+                          filter: 'drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0px 0px 4px ' + theme.palette.primary.main + ')',
+                        },
+                      },
+                    }} 
+                  />
+                }
+              >
+                {datasheet.enhancements.map((enhancement, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography sx={{ 
+                      color: isDarkMode ? '#e0e0e0' : 'black',
+                      fontSize: '0.85rem',
+                      lineHeight: 1.5
+                    }}>
+                      <Box component="span" sx={{ fontWeight: 'bold' }}>{translate(enhancement.name, datasheet.faction_id)} ({enhancement.cost} pts):</Box> {translate(enhancement.description, datasheet.faction_id)}
+                    </Typography>
+                    {enhancement.keywords && enhancement.keywords.length > 0 && (
+                      <Typography sx={{ 
+                        fontSize: '0.8rem',
+                        color: isDarkMode ? 'white' : factionColors.header,
+                        fontStyle: 'italic',
+                        lineHeight: 1.2,
+                        mt: 0.5
+                      }}>
+                        [{enhancement.keywords.join(', ')}]
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </SectionHeader>
+            </Box>
+          )}
+        </Box>
       </Box>
     </Box>
   );

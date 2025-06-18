@@ -7,4 +7,6 @@ export interface Profile {
     $text: string;
   }>;
   sourceUnit?: string;
-} 
+}
+
+export type { Datasheet, LinkedUnit } from './datasheet'; 

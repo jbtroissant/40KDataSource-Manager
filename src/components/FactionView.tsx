@@ -5,13 +5,15 @@ import UnitCard from './UnitView/UnitCard';
 import FactionRules from './FactionRules';
 import DetachmentSelector from './DetachmentSelector';
 import DetachmentDetails from './DetachmentDetails';
+import CleanupDialog from './CleanupDialog';
 import { Datasheet } from '../types/datasheet';
 import { useParams, useNavigate } from 'react-router-dom';
-import { loadDatasource } from '../utils/datasourceDb';
+import { loadDatasource, saveDatasourceBloc } from '../utils/datasourceDb';
 import { useTranslate } from '../services/translationService';
 import AppLayout from './AppLayout';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 const FactionView: React.FC = () => {
   const [selectedDatasheet, setSelectedDatasheet] = useState<Datasheet | null>(null);
@@ -27,6 +29,8 @@ const FactionView: React.FC = () => {
   const [factionIconUrl, setFactionIconUrl] = useState<string>('');
   const translate = useTranslate();
   const navigate = useNavigate();
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [keysToRemove, setKeysToRemove] = useState<string[]>([]);
 
   React.useEffect(() => {
     const loadFactionData = async () => {
@@ -97,10 +101,74 @@ const FactionView: React.FC = () => {
     });
   };
 
+  // Fonction utilitaire pour chercher récursivement une valeur dans un objet
+  function isKeyUsedInTranslated(obj: any, key: string): boolean {
+    if (obj === key) return true;
+    if (Array.isArray(obj)) {
+      return obj.some(item => isKeyUsedInTranslated(item, key));
+    } else if (typeof obj === 'object' && obj !== null) {
+      return Object.values(obj).some(value => isKeyUsedInTranslated(value, key));
+    }
+    return false;
+  }
+
+  const handleCleanup = async () => {
+    if (!factionId) return;
+    const datasource = await loadDatasource();
+    const translatedData = datasource[`${factionId}_translated`];
+
+    if (!translatedData) return;
+
+    // Trouver toutes les clés flat de la faction (ex: CHDA_flat_fr, CHDA_flat_en, ...)
+    const flatKeys = Object.keys(datasource).filter(key => key.startsWith(`${factionId}_flat_`));
+    if (flatKeys.length === 0) return;
+
+    // On prend le premier flat pour la détection des clés inutilisées
+    const flatDataRef = datasource[flatKeys[0]];
+    if (!flatDataRef) return;
+
+    const keysToRemove: string[] = [];
+    Object.keys(flatDataRef).forEach(key => {
+      if (!isKeyUsedInTranslated(translatedData, key)) {
+        keysToRemove.push(key);
+      }
+    });
+
+    setKeysToRemove(keysToRemove);
+    setCleanupDialogOpen(true);
+    // On stocke aussi les flatKeys pour la suite
+    (window as any)._flatKeysToCleanup = flatKeys;
+  };
+
+  const handleConfirmCleanup = async () => {
+    if (!factionId) return;
+    const datasource = await loadDatasource();
+    // Récupérer les flatKeys stockées
+    const flatKeys: string[] = (window as any)._flatKeysToCleanup || Object.keys(datasource).filter(key => key.startsWith(`${factionId}_flat_`));
+
+    for (const flatKey of flatKeys) {
+      const flatData = datasource[flatKey];
+      if (!flatData) continue;
+      keysToRemove.forEach(key => {
+        delete flatData[key];
+      });
+      await saveDatasourceBloc(flatKey, flatData);
+    }
+
+    setCleanupDialogOpen(false);
+    setKeysToRemove([]);
+    setRefreshKey(k => k + 1); // Pour rafraîchir la liste
+  };
+
   const rightAction = (
-    <IconButton onClick={handleExport} title="Exporter les fichiers de la faction">
-      <DownloadIcon />
-    </IconButton>
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      <IconButton onClick={handleCleanup} title="Nettoyer les données">
+        <CleaningServicesIcon />
+      </IconButton>
+      <IconButton onClick={handleExport} title="Exporter les fichiers de la faction">
+        <DownloadIcon />
+      </IconButton>
+    </Box>
   );
 
   return (
@@ -258,6 +326,13 @@ const FactionView: React.FC = () => {
             }}
           />
         )}
+
+        <CleanupDialog
+          open={cleanupDialogOpen}
+          onClose={() => setCleanupDialogOpen(false)}
+          keysToRemove={keysToRemove}
+          onConfirm={handleConfirmCleanup}
+        />
       </Box>
     </AppLayout>
   );
