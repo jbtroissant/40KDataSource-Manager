@@ -23,7 +23,6 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
 
   useEffect(() => {
     if (datasource) {
-      const factionTranslations = datasource.translations?.[language]?.[factionId] || {};
       // Charger les traductions existantes
       const existingTranslations: Record<string, string> = {};
       
@@ -35,33 +34,41 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
         existingTranslations[datasheet.fluff] = translate(datasheet.fluff, factionId);
       }
 
-      // Traductions des capacités
-      datasheet.abilities.faction.forEach((ability, index) => {
-        existingTranslations[`${datasheet.id}.abilities.faction.${index}`] = translate(ability, factionId);
+      // Abilities de faction
+      datasheet.abilities.faction.forEach((ability) => {
+        existingTranslations[ability] = translate(ability, factionId);
       });
-
-      datasheet.abilities.special.forEach((ability, index) => {
-        existingTranslations[`${datasheet.id}.abilities.special.${index}`] = translate(ability.name, factionId);
+      // Abilities spéciales
+      datasheet.abilities.special.forEach((ability) => {
+        existingTranslations[ability.name] = translate(ability.name, factionId);
       });
-
-      // Traductions des armes
-      datasheet.meleeWeapons.forEach((weapon, weaponIndex) => {
-        weapon.profiles.forEach((profile, profileIndex) => {
-          existingTranslations[`${datasheet.id}.meleeWeapons.${weaponIndex}.profiles.${profileIndex}.name`] = 
-            translate(profile.name, factionId);
+      // Stats
+      datasheet.stats.forEach((stat) => {
+        if (stat.name) existingTranslations[stat.name] = translate(stat.name, factionId);
+      });
+      // Armes de mêlée
+      datasheet.meleeWeapons.forEach((weapon) => {
+        weapon.profiles.forEach((profile) => {
+          if (profile.name) existingTranslations[profile.name] = translate(profile.name, factionId);
+        });
+      });
+      // Armes à distance
+      datasheet.rangedWeapons.forEach((weapon) => {
+        weapon.profiles.forEach((profile) => {
+          if (profile.name) existingTranslations[profile.name] = translate(profile.name, factionId);
         });
       });
 
-      datasheet.rangedWeapons.forEach((weapon, weaponIndex) => {
-        weapon.profiles.forEach((profile, profileIndex) => {
-          existingTranslations[`${datasheet.id}.rangedWeapons.${weaponIndex}.profiles.${profileIndex}.name`] = 
-            translate(profile.name, factionId);
-        });
+      // On ne met à jour que les traductions qui n'existent pas encore
+      const newTranslations = { ...translations };
+      Object.entries(existingTranslations).forEach(([key, value]) => {
+        if (!translations[key]) {
+          newTranslations[key] = value;
+        }
       });
-
-      setTranslations(existingTranslations);
+      setTranslations(newTranslations);
     }
-  }, [datasource, factionId, language, datasheet, translate]);
+  }, [datasource, factionId, language, datasheet.id, datasheet.name, datasheet.fluff, datasheet.abilities, datasheet.meleeWeapons, datasheet.rangedWeapons, translate]);
 
   const handleTranslationChange = (key: string, value: string) => {
     const newTranslations = {
@@ -75,122 +82,40 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
   return (
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {/* Informations de base */}
         <Paper sx={{ p: 2 }}>
           <Typography variant="h6" gutterBottom>
-            Informations de base
+            Toutes les traductions utilisées dans la fiche
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField
-              fullWidth
-              label="Nom"
-              value={translations[datasheet.name] || ''}
-              onChange={(e) => handleTranslationChange(datasheet.name, e.target.value)}
-            />
-            <TextField
-              fullWidth
-              label="Description"
-              multiline
-              rows={4}
-              value={translations[datasheet.fluff] || ''}
-              onChange={(e) => handleTranslationChange(datasheet.fluff, e.target.value)}
-            />
-          </Box>
-        </Paper>
-
-        {/* Capacités */}
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Capacités
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Capacités de faction */}
-            <Typography variant="subtitle1">Capacités de faction</Typography>
-            {datasheet.abilities.faction.map((ability, index) => (
-              <TextField
-                key={`faction-${index}`}
-                fullWidth
-                label={`Capacité de faction ${index + 1}`}
-                multiline
-                rows={2}
-                value={translations[`${datasheet.id}.abilities.faction.${index}`] || ''}
-                onChange={(e) =>
-                  handleTranslationChange(
-                    `${datasheet.id}.abilities.faction.${index}`,
-                    e.target.value
-                  )
-                }
-              />
-            ))}
-
-            {/* Capacités spéciales */}
-            <Typography variant="subtitle1">Capacités spéciales</Typography>
-            {datasheet.abilities.special.map((ability, index) => (
-              <TextField
-                key={`special-${index}`}
-                fullWidth
-                label={`Capacité spéciale ${index + 1}`}
-                multiline
-                rows={2}
-                value={translations[`${datasheet.id}.abilities.special.${index}`] || ''}
-                onChange={(e) =>
-                  handleTranslationChange(
-                    `${datasheet.id}.abilities.special.${index}`,
-                    e.target.value
-                  )
-                }
-              />
-            ))}
-          </Box>
-        </Paper>
-
-        {/* Armes */}
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Armes
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Armes de mêlée */}
-            <Typography variant="subtitle1">Armes de mêlée</Typography>
-            {datasheet.meleeWeapons.map((weapon, weaponIndex) => (
-              <Box key={`melee-${weaponIndex}`} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {weapon.profiles.map((profile, profileIndex) => (
+            {(() => {
+              // Collecte de toutes les clés de traduction utilisées dans la datasheet
+              const allKeys: string[] = [];
+              if (datasheet.name) allKeys.push(datasheet.name);
+              if (datasheet.fluff) allKeys.push(datasheet.fluff);
+              // Abilities
+              datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
+              datasheet.abilities.special.forEach((ability) => allKeys.push(ability.name));
+              // Stats
+              datasheet.stats.forEach((stat) => stat.name && allKeys.push(stat.name));
+              // Armes de mêlée
+              datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
+              // Armes à distance
+              datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
+              // Dédupliquer et compter les occurrences
+              const uniqueKeys = Array.from(new Set(allKeys));
+              return uniqueKeys.map((key) => {
+                const count = allKeys.filter(k => k === key).length;
+                return (
                   <TextField
-                    key={`melee-${weaponIndex}-${profileIndex}`}
+                    key={`translation-key-${key}`}
                     fullWidth
-                    label={`Arme de mêlée ${weaponIndex + 1} - Profil ${profileIndex + 1}`}
-                    value={translations[`${datasheet.id}.meleeWeapons.${weaponIndex}.profiles.${profileIndex}.name`] || ''}
-                    onChange={(e) =>
-                      handleTranslationChange(
-                        `${datasheet.id}.meleeWeapons.${weaponIndex}.profiles.${profileIndex}.name`,
-                        e.target.value
-                      )
-                    }
+                    label={`${key}${count > 1 ? ` (utilisé ${count} fois)` : ''}`}
+                    value={translations[key] || ''}
+                    onChange={(e) => handleTranslationChange(key, e.target.value)}
                   />
-                ))}
-              </Box>
-            ))}
-
-            {/* Armes à distance */}
-            <Typography variant="subtitle1">Armes à distance</Typography>
-            {datasheet.rangedWeapons.map((weapon, weaponIndex) => (
-              <Box key={`ranged-${weaponIndex}`} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {weapon.profiles.map((profile, profileIndex) => (
-                  <TextField
-                    key={`ranged-${weaponIndex}-${profileIndex}`}
-                    fullWidth
-                    label={`Arme à distance ${weaponIndex + 1} - Profil ${profileIndex + 1}`}
-                    value={translations[`${datasheet.id}.rangedWeapons.${weaponIndex}.profiles.${profileIndex}.name`] || ''}
-                    onChange={(e) =>
-                      handleTranslationChange(
-                        `${datasheet.id}.rangedWeapons.${weaponIndex}.profiles.${profileIndex}.name`,
-                        e.target.value
-                      )
-                    }
-                  />
-                ))}
-              </Box>
-            ))}
+                );
+              });
+            })()}
           </Box>
         </Paper>
       </Box>

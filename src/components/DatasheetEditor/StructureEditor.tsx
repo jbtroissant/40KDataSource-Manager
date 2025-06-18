@@ -111,10 +111,7 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
 
   return (
     <Box sx={{ p: 2 }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <IconButton onClick={() => navigate(`/faction/${datasheet.faction_id}`)} color="primary">
-          <ArrowBackIcon />
-        </IconButton>
+      <Box sx={{ mb: 2 }}>
         <Typography variant="h6">Édition de la fiche</Typography>
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -170,54 +167,122 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                 label="Legends"
               />
             </Box>
-            <Box sx={{ flex: '1 1 100%' }}>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Abilities core</Typography>
-                <FormGroup row sx={{ flexWrap: 'wrap', gap: 2 }}>
-                  {CORE_ABILITIES.map((ability) => (
-                    <FormControlLabel
-                      key={ability}
-                      control={
-                        <Checkbox
-                          checked={Array.isArray(datasheet.abilities?.core) && datasheet.abilities.core.includes(ability)}
-                          onChange={(e) => {
-                            const current = Array.isArray(datasheet.abilities?.core) ? datasheet.abilities.core : [];
-                            const newCore = e.target.checked
-                              ? [...current, ability]
-                              : current.filter(a => a !== ability);
-                            handleChange('abilities', {
-                              ...datasheet.abilities,
-                              core: newCore
-                            });
-                          }}
-                        />
-                      }
-                      label={
-                        datasource && datasource['core_flat_fr'] && datasource['core_flat_fr'][ability]
-                          ? `${ability} (${datasource['core_flat_fr'][ability]})`
-                          : ability
-                      }
-                    />
-                  ))}
-                  {/* Champs pour abilities à valeur */}
-                  {ABILITIES_WITH_VALUE.map(({ key, valueField, label }) => (
-                    Array.isArray(datasheet.abilities?.core) && datasheet.abilities.core.includes(key) && (
-                      <Box key={key} sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
-                        <TextField
-                          size="small"
-                          label={label}
-                          value={(datasheet.abilities as any)[valueField] || ''}
-                          onChange={e => handleChange('abilities', {
+          </Box>
+        </Paper>
+
+        {/* Capacités */}
+        <Paper sx={{ p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Capacités
+          </Typography>
+          <Box sx={{ flex: '1 1 100%' }}>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Capacités de base</Typography>
+              <FormGroup row sx={{ flexWrap: 'wrap', gap: 2 }}>
+                {CORE_ABILITIES.map((ability) => (
+                  <FormControlLabel
+                    key={ability}
+                    control={
+                      <Checkbox
+                        checked={Array.isArray(datasheet.abilities?.core) && datasheet.abilities.core.includes(ability)}
+                        onChange={(e) => {
+                          const current = Array.isArray(datasheet.abilities?.core) ? datasheet.abilities.core : [];
+                          const newCore = e.target.checked
+                            ? [...current, ability]
+                            : current.filter(a => a !== ability);
+                          handleChange('abilities', {
                             ...datasheet.abilities,
-                            [valueField]: e.target.value
-                          })}
-                          sx={{ width: 100 }}
-                        />
-                      </Box>
-                    )
-                  ))}
-                </FormGroup>
+                            core: newCore
+                          });
+                        }}
+                      />
+                    }
+                    label={
+                      datasource && datasource['core_flat_fr'] && datasource['core_flat_fr'][ability]
+                        ? `${ability} (${datasource['core_flat_fr'][ability]})`
+                        : ability
+                    }
+                  />
+                ))}
+                {/* Champs pour abilities à valeur */}
+                {ABILITIES_WITH_VALUE.map(({ key, valueField, label }) => (
+                  Array.isArray(datasheet.abilities?.core) && datasheet.abilities.core.includes(key) && (
+                    <Box key={key} sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                      <TextField
+                        size="small"
+                        label={label}
+                        value={(datasheet.abilities as any)[valueField] || ''}
+                        onChange={e => handleChange('abilities', {
+                          ...datasheet.abilities,
+                          [valueField]: e.target.value
+                        })}
+                        sx={{ width: 100 }}
+                      />
+                    </Box>
+                  )
+                ))}
+              </FormGroup>
+            </Box>
+
+            {/* Abilities de faction */}
+            <Box sx={{ mt: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ flex: 1 }}>Capacité de faction</Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    const newFaction = [...datasheet.abilities.faction, ''];
+                    handleChange('abilities', {
+                      ...datasheet.abilities,
+                      faction: newFaction
+                    });
+                  }}
+                  disabled={datasheet.abilities.faction.some(a => !a)}
+                >
+                  Ajouter
+                </Button>
               </Box>
+              {datasheet.abilities.faction.map((ability, idx) => (
+                <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                  <Box sx={{ flex: 1, minWidth: 200 }}>
+                    <TranslationKeyField
+                      label={`Capacité de faction ${idx + 1}`}
+                      value={ability}
+                      onChange={val => {
+                        // Ne pas autoriser les champs vides
+                        if (!val) return;
+                        const newFaction = [...datasheet.abilities.faction];
+                        newFaction[idx] = val;
+                        handleChange('abilities', {
+                          ...datasheet.abilities,
+                          faction: newFaction
+                        });
+                      }}
+                      onSearchClick={() => {}}
+                      translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                      translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                      margin="dense"
+                      fullWidth
+                    />
+                  </Box>
+                  <IconButton
+                    color="error"
+                    onClick={() => {
+                      const newFaction = [...datasheet.abilities.faction];
+                      newFaction.splice(idx, 1);
+                      handleChange('abilities', {
+                        ...datasheet.abilities,
+                        faction: newFaction
+                      });
+                    }}
+                    size="small"
+                    sx={{ mt: 1 }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))}
             </Box>
           </Box>
         </Paper>
@@ -286,9 +351,37 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
 
         {/* Statistiques */}
         <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Statistiques
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
+              Statistiques
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                const newStats = [
+                  ...datasheet.stats,
+                  {
+                    name: '',
+                    m: '',
+                    t: '',
+                    sv: '',
+                    w: '',
+                    ld: '',
+                    oc: '',
+                    invul: '',
+                    showDamagedMarker: false,
+                    showName: false,
+                    active: true
+                  }
+                ];
+                handleChange('stats', newStats);
+              }}
+              sx={{ ml: 2 }}
+            >
+              Ajouter
+            </Button>
+          </Box>
           {datasheet.stats.map((stat, index) => (
             <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
               <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -438,33 +531,6 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
               </Box>
             </Box>
           ))}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                const newStats = [
-                  ...datasheet.stats,
-                  {
-                    name: '',
-                    m: '',
-                    t: '',
-                    sv: '',
-                    w: '',
-                    ld: '',
-                    oc: '',
-                    invul: '',
-                    showDamagedMarker: false,
-                    showName: false,
-                    active: true
-                  }
-                ];
-                handleChange('stats', newStats);
-              }}
-            >
-              Ajouter une ligne de stats
-            </Button>
-          </Box>
         </Paper>
 
         {/* Armes de mêlée */}

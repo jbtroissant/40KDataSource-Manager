@@ -200,8 +200,11 @@ const DatasheetEditor: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" color="default" elevation={0}>
+      <AppBar position="sticky" color="default" elevation={0} sx={{ top: 0, zIndex: 1200 }}>
         <Toolbar>
+          <Button color="primary" variant="contained" onClick={() => navigate(`/faction/${editedDatasheet.faction_id}`)} sx={{ mr: 2 }}>
+            Retour
+          </Button>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Éditeur de fiche
           </Typography>
@@ -211,7 +214,7 @@ const DatasheetEditor: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', position: 'sticky', top: { xs: 56, sm: 64 }, zIndex: 1100, bgcolor: 'background.paper' }}>
         <Tabs value={activeTab} onChange={handleTabChange} aria-label="datasheet tabs">
           <Tab label="Structure" />
           <Tab label="Traductions FR" />
