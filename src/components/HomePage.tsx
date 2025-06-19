@@ -107,7 +107,8 @@ const factionImages: { [key: string]: string } = {
   'UM': '/images/factions/UM.png',
   'WS': '/images/factions/WS.png',
   'WE': '/images/factions/WE.png',
-  'YI': '/images/factions/YI.png'
+  'YI': '/images/factions/YI.png',
+  'CHDW': '/images/factions/CHDW.png'
 };
 
 const HomePage: React.FC = () => {
@@ -321,13 +322,13 @@ const HomePage: React.FC = () => {
 
   const renderFactionSection = () => {
     const imperiumList = [
-      'AS', 'AC', 'AdM', 'AM', 'CHBT','CHBA', 'CHDA', 'DG', 'GK', 'AoI','QI', 'SM', 'CHSW'
+      'AS', 'AC', 'AdM', 'AM', 'CHBT','CHBA', 'CHDA', 'CHDW', 'GK', 'AoI','QI', 'SM', 'CHSW'
     ];
     const chaosList = [
-      'CD', 'QT', 'CSM', 'LGEC', 'WE', 'TS'
+      'CD', 'QT', 'CSM', 'DG', 'LGEC', 'WE', 'TS'
     ];
     const xenosList = [
-      'AE', 'DRU', 'GSC', 'HQ', 'LoV', 'NEC','ORK', 'TAU', 'TYR'
+      'AE', 'DRU', 'GSC', 'HQ', 'LoV', 'NEC','ORK', 'TAU', 'TYR', 'UN'
     ];
 
     const allFactions = [

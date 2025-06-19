@@ -34,6 +34,7 @@ import { APP_VERSION } from '../config';
 import Switch from '@mui/material/Switch';
 import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
 import { DatasourceProvider } from '../contexts/DatasourceContext';
+import { useLegends } from '../contexts/LegendsContext';
 import CircularProgress from '@mui/material/CircularProgress';
 
 interface AppLayoutProps {
@@ -42,6 +43,39 @@ interface AppLayoutProps {
   leftAction?: React.ReactNode;
   rightAction?: React.ReactNode;
 }
+
+const factionNames: Record<string, string> = {
+  'SM': 'Space Marines',
+  'CSM': 'Chaos Space Marines',
+  'core': 'Base',
+  'AS': 'Adeptus Sororitas',
+  'AC': 'Adeptus Custodes',
+  'AdM': 'Adeptus Mechanicus',
+  'AE': 'Aeldari',
+  'AoI': 'Agents of the Imperium',
+  'AM': 'Astra Militarum',
+  'CHBT': 'Black Templars',
+  'CHBA': 'Blood Angels',
+  'CD': 'Chaos Daemons',
+  'QT': 'Chaos Knights',
+  'CHDA': 'Dark Angels',
+  'DG': 'Death Guard',
+  'DRU': 'Drukhari',
+  'LGEC': 'Emperors Children',
+  'GK': 'Grey Knights',
+  'GSC': 'Genestealer Cults',
+  'QI': 'Imperial Knights',
+  'NEC': 'Necrons',
+  'ORK': 'Orks',
+  'CHSW': 'Space Wolves',
+  'TAU': 'T\'au Empire',
+  'TS': 'Thousand Sons',
+  'UN': 'Unaligned',
+  'LoV': 'Leagues of Votann',
+  'WE': 'World Eaters',
+  'TYR': 'Tyranids',
+  'CHDW': 'Deathwatch'
+};
 
 const LanguageSelector = () => {
   const { lang, setLang } = useLanguage();
@@ -73,8 +107,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { showSnackbar } = useSnackbar();
-  const [showLegends, setShowLegends] = useState(false);
+  const { showLegends, setShowLegends } = useLegends();
   const [isLoadingDatasource, setIsLoadingDatasource] = useState(true);
+  const [loadingFactions, setLoadingFactions] = useState<string[]>([]);
 
   const handleClose = useCallback(() => {
     setAnchorEl(null);
@@ -82,6 +117,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
 
   const handleRefreshDatasource = useCallback(async () => {
     setIsLoadingDatasource(true);
+    setLoadingFactions([]);
     try {
       // Détection de iOS
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -116,7 +152,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
         'UN',
         'LoV',
         'WE',
-        'TYR'
+        'TYR',
+        'CHDW',
       ];
 
       const datasource: Record<string, any> = {};
@@ -131,6 +168,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
 
       for (const endpoint of endpoints) {
         const key = endpoint.replace('.json', '');
+        
+        // Mettre à jour la liste des factions en cours de chargement
+        setLoadingFactions(prev => [...prev, key]);
+        
         // 1. Fichier traduit (racine)
         try {
           const translatedResp = await fetch(`https://raw.githubusercontent.com/jbtroissant/40KDataSource/refs/heads/main/${key}.translated.json`, {
@@ -217,6 +258,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
     } finally {
       handleClose();
       setIsLoadingDatasource(false);
+      setLoadingFactions([]);
     }
   }, [handleClose]);
 
@@ -300,10 +342,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
   };
 
   const childrenWithProps = React.Children.map(children, child => {
-    if (React.isValidElement(child) && child.type && (child.type as any).name === 'DatasheetList') {
-      // @ts-ignore
-      return cloneElement(child as any, { showLegends, setShowLegends });
-    }
     return child;
   });
 
@@ -404,7 +442,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
             <Box sx={{ width: '100%', textAlign: 'center', py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <CircularProgress color="primary" size={48} sx={{ mb: 2 }} />
               <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                Chargement des données...
+                Chargement en cours... {loadingFactions.length > 0 && factionNames[loadingFactions[loadingFactions.length - 1]]}
               </Typography>
             </Box>
           )}

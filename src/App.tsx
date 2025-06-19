@@ -10,6 +10,7 @@ import darkBackground from './assets/images/darkBackground.jpg';
 import { SnackbarProvider } from './contexts/SnackbarContext';
 import { VersionService } from './services/versionService';
 import { DatasourceProvider } from './contexts/DatasourceContext';
+import { LegendsProvider } from './contexts/LegendsContext';
 
 export const ThemeContext = createContext({
   mode: 'dark' as 'light' | 'dark',
@@ -55,37 +56,39 @@ function App() {
       <ThemeProvider theme={getTheme()}>
         <CssBaseline />
         <DatasourceProvider>
-          <SnackbarProvider>
-            <Box
-              sx={{
-                minHeight: '100vh',
-                width: '100%',
-                position: 'relative',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundImage: `url(${mode === 'light' ? clearBackground : darkBackground})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundAttachment: 'fixed',
-                  backgroundRepeat: 'no-repeat',
-                  zIndex: -1,
-                },
-              }}
-            >
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/faction/:factionId" element={<FactionView />} />
-                  <Route path="/editor/:factionId/:datasheetId" element={<DatasheetEditor />} />
-                </Routes>
-              </Router>
-            </Box>
-          </SnackbarProvider>
+          <LegendsProvider>
+            <SnackbarProvider>
+              <Box
+                sx={{
+                  minHeight: '100vh',
+                  width: '100%',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `url(${mode === 'light' ? clearBackground : darkBackground})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundAttachment: 'fixed',
+                    backgroundRepeat: 'no-repeat',
+                    zIndex: -1,
+                  },
+                }}
+              >
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/faction/:factionId" element={<FactionView />} />
+                    <Route path="/editor/:factionId/:datasheetId" element={<DatasheetEditor />} />
+                  </Routes>
+                </Router>
+              </Box>
+            </SnackbarProvider>
+          </LegendsProvider>
         </DatasourceProvider>
       </ThemeProvider>
     </ThemeContext.Provider>

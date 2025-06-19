@@ -26,6 +26,7 @@ import { ArmyRule } from '../../types/army';
 import { loadDatasource } from '../../utils/datasourceDb';
 import UnitCard from '../UnitView/UnitCard';
 import { useTranslate } from '../../services/translationService';
+import { useLegends } from '../../contexts/LegendsContext';
 
 interface DatasheetListProps {
   factionId: string;
@@ -33,8 +34,6 @@ interface DatasheetListProps {
   onAdd: (datasheet: Datasheet) => void;
   onUnitAdded?: () => void;
   selectedItem?: { type: 'datasheet' | 'army', id: string } | null;
-  showLegends?: boolean;
-  setShowLegends?: (value: boolean) => void;
   searchTerm?: string;
   onSearch?: (term: string) => void;
   detachment?: any;
@@ -68,8 +67,6 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
   onSelectDatasheet,
   onUnitAdded,
   selectedItem,
-  showLegends = false,
-  setShowLegends,
   searchTerm: externalSearchTerm,
   onSearch,
   detachment,
@@ -93,6 +90,7 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
   const [datasourceData, setDatasourceData] = useState<any>(null);
   const [selectedDatasheet, setSelectedDatasheet] = useState<Datasheet | null>(null);
   const translate = useTranslate();
+  const { showLegends } = useLegends();
 
   const toggleMainFactionSection = (section: string) => {
     setMainFactionSections((prev: Record<string, boolean>) => ({
@@ -153,7 +151,8 @@ const DatasheetList: React.FC<DatasheetListProps> = ({
           faction => faction.id === 'UN'
         );
         if (unaligned) {
-          const validDatasheets = unaligned.datasheets?.filter(d => d.keywords && d.keywords.length > 0) || [];
+          // Pour les datasheets UN, on accepte toutes les datasheets même sans keywords
+          const validDatasheets = unaligned.datasheets || [];
           setUnalignedFaction({
             ...unaligned,
             datasheets: validDatasheets
