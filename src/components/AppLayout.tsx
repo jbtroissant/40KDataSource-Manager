@@ -24,6 +24,7 @@ import {
   DarkMode as DarkModeIcon,
   Refresh as RefreshIcon,
   ArrowForwardIos,
+  Sync as SyncIcon,
 } from '@mui/icons-material';
 import { ThemeContext } from '../App';
 import unitExclusions from '../config/unitExclusions.json';
@@ -218,6 +219,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
       setIsLoadingDatasource(false);
     }
   }, [handleClose]);
+
+  const handleForceReloadLocal = useCallback(async () => {
+    try {
+      const { forceReloadGlobal } = await import('../contexts/DatasourceContext');
+      await forceReloadGlobal();
+      showSnackbar('Données locales rechargées', 'success');
+    } catch (error) {
+      showSnackbar('Erreur lors du rechargement local', 'error');
+    }
+  }, [showSnackbar]);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -416,6 +427,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
                       </ListItemIcon>
                       <ListItemText primary="Rafraîchir datasource" />
                     </ListItemButton>
+                    <ListItemButton onClick={handleForceReloadLocal}>
+                      <ListItemIcon>
+                        <SyncIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText primary="Recharger données locales" />
+                    </ListItemButton>
                     <Divider />
                     <ListItemButton onClick={toggleTheme}>
                       <ListItemIcon>
@@ -466,6 +483,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
                   <RefreshIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>Rafraîchir datasource</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={handleForceReloadLocal}>
+                <ListItemIcon>
+                  <SyncIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Recharger données locales</ListItemText>
               </MenuItem>
               <Divider />
               <MenuItem onClick={toggleTheme}>

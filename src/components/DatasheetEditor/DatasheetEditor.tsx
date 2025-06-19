@@ -3,8 +3,6 @@ import {
   Box,
   Tabs,
   Tab,
-  AppBar,
-  Toolbar,
   Button,
   Snackbar,
   Alert,
@@ -17,6 +15,9 @@ import { loadDatasource, saveDatasourceBloc } from '../../utils/datasourceDb';
 import StructureEditor from './StructureEditor';
 import TranslationEditor from './TranslationEditor';
 import { datasheetEditorService } from '../../services/datasheetEditorService';
+import AppLayout from '../AppLayout';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SaveIcon from '@mui/icons-material/Save';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,6 +50,7 @@ const DatasheetEditor: React.FC = () => {
   const [enTranslations, setEnTranslations] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [showErrors, setShowErrors] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -176,12 +178,18 @@ const DatasheetEditor: React.FC = () => {
         await saveDatasourceBloc(factionKey, datasource[factionKey]);
       }
 
-      // Sauvegarder les traductions
-      await saveDatasourceBloc(flatFrKey, frTranslations);
-      await saveDatasourceBloc(flatEnKey, enTranslations);
+      // Fusionner et sauvegarder les traductions françaises
+      const existingFrTranslations = datasource[flatFrKey] || {};
+      const mergedFrTranslations = { ...existingFrTranslations, ...frTranslations };
+      await saveDatasourceBloc(flatFrKey, mergedFrTranslations);
 
-      // Rediriger vers la vue de la faction
-      navigate(`/faction/${factionId}`);
+      // Fusionner et sauvegarder les traductions anglaises
+      const existingEnTranslations = datasource[flatEnKey] || {};
+      const mergedEnTranslations = { ...existingEnTranslations, ...enTranslations };
+      await saveDatasourceBloc(flatEnKey, mergedEnTranslations);
+
+      // Afficher un message de succès au lieu de rediriger
+      setShowSuccess(true);
     } catch (error) {
       setErrors(['Erreur lors de la sauvegarde']);
       setShowErrors(true);
@@ -206,54 +214,58 @@ const DatasheetEditor: React.FC = () => {
     );
   }
 
+  // Actions pour AppLayout
+  const leftAction = (
+    <Button 
+      color="primary" 
+      variant="contained" 
+      onClick={() => navigate(-1)} 
+      startIcon={<ArrowBackIcon />}
+    >
+      Retour
+    </Button>
+  );
+
+  const rightAction = (
+    <Button 
+      variant="contained" 
+      color="primary" 
+      onClick={handleSave}
+      startIcon={<SaveIcon />}
+    >
+      Enregistrer
+    </Button>
+  );
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Barre de menu fixe */}
-      <AppBar position="fixed" color="default" elevation={0} sx={{ zIndex: 1200 }}>
-        <Toolbar>
-          <Button color="primary" variant="contained" onClick={() => navigate(`/faction/${editedDatasheet.faction_id}`)} sx={{ mr: 2 }}>
-            Retour
-          </Button>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Éditeur de fiche
-          </Typography>
-          <Button variant="contained" color="primary" onClick={handleSave}>
-            Enregistrer
-          </Button>
-        </Toolbar>
-      </AppBar>
+    <AppLayout 
+      leftAction={leftAction} 
+      title="Éditeur de fiche" 
+      rightAction={rightAction}
+    >
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)' }}>
+        {/* Onglets fixes en haut */}
+        <Box sx={{ 
+          borderBottom: 1, 
+          borderColor: 'divider', 
+          bgcolor: 'background.paper' 
+        }}>
+          <Tabs value={activeTab} onChange={handleTabChange} aria-label="datasheet tabs">
+            <Tab label="Structure" />
+            <Tab label="Traductions FR" />
+            <Tab label="Traductions EN" />
+          </Tabs>
+        </Box>
 
-      {/* Onglets fixes sous la barre de menu */}
-      <Box sx={{ 
-        borderBottom: 1, 
-        borderColor: 'divider', 
-        position: 'fixed', 
-        top: { xs: 56, sm: 64 }, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1100, 
-        bgcolor: 'background.paper' 
-      }}>
-        <Tabs value={activeTab} onChange={handleTabChange} aria-label="datasheet tabs">
-          <Tab label="Structure" />
-          <Tab label="Traductions FR" />
-          <Tab label="Traductions EN" />
-        </Tabs>
-      </Box>
-
-      {/* Contenu principal avec padding pour éviter le chevauchement */}
-      <Box sx={{ 
-        flex: 1, 
-        mt: { xs: '112px', sm: '120px' }, // Hauteur de la barre de menu + onglets
-        overflow: 'auto',
-        height: 'calc(100vh - 112px)' // Hauteur totale moins la hauteur de la barre de menu + onglets
-      }}>
-        {activeTab === 0 && (
+        {/* Contenu scrollable */}
+        <Box sx={{ 
+          flex: 1, 
+          overflow: 'auto',
+          position: 'relative'
+        }}>
           <TabPanel value={activeTab} index={0}>
             <StructureEditor key={editedDatasheet.id} datasheet={editedDatasheet} onChange={handleStructureChange} />
           </TabPanel>
-        )}
-        {activeTab === 1 && (
           <TabPanel value={activeTab} index={1}>
             <TranslationEditor
               key={editedDatasheet.id + '-fr'}
@@ -263,8 +275,6 @@ const DatasheetEditor: React.FC = () => {
               onChange={(translations) => handleTranslationChange('fr', translations)}
             />
           </TabPanel>
-        )}
-        {activeTab === 2 && (
           <TabPanel value={activeTab} index={2}>
             <TranslationEditor
               key={editedDatasheet.id + '-en'}
@@ -274,24 +284,35 @@ const DatasheetEditor: React.FC = () => {
               onChange={(translations) => handleTranslationChange('en', translations)}
             />
           </TabPanel>
-        )}
-      </Box>
+        </Box>
 
-      <Snackbar
-        open={showErrors}
-        autoHideDuration={6000}
-        onClose={() => setShowErrors(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setShowErrors(false)} severity="error" sx={{ width: '100%' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {errors.map((error, index) => (
-              <Typography key={index}>{error}</Typography>
-            ))}
-          </Box>
-        </Alert>
-      </Snackbar>
-    </Box>
+        <Snackbar
+          open={showErrors}
+          autoHideDuration={6000}
+          onClose={() => setShowErrors(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setShowErrors(false)} severity="error" sx={{ width: '100%' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {errors.map((error, index) => (
+                <Typography key={index}>{error}</Typography>
+              ))}
+            </Box>
+          </Alert>
+        </Snackbar>
+
+        <Snackbar
+          open={showSuccess}
+          autoHideDuration={3000}
+          onClose={() => setShowSuccess(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setShowSuccess(false)} severity="success" sx={{ width: '100%' }}>
+            <Typography>Fiche enregistrée avec succès !</Typography>
+          </Alert>
+        </Snackbar>
+      </Box>
+    </AppLayout>
   );
 };
 

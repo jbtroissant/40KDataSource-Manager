@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { TextField, Typography, Popper, Paper, List, ListItem, ListItemText, Box } from '@mui/material';
+import { TextField, Typography, Popper, Paper, List, ListItem, ListItemText, Box, IconButton } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 
 export interface TranslationKeyFieldProps {
   label: string;
@@ -12,6 +13,7 @@ export interface TranslationKeyFieldProps {
   margin?: 'none' | 'dense' | 'normal';
   fullWidth?: boolean;
   disabled?: boolean;
+  language?: 'fr' | 'en';
 }
 
 function useDebounce(callback: (...args: any[]) => void, delay: number) {
@@ -25,6 +27,17 @@ function useDebounce(callback: (...args: any[]) => void, delay: number) {
   return debouncedCallback;
 }
 
+// Fonction utilitaire pour transformer en snake_case
+function toSnakeCase(str: string) {
+  // Remplacement compatible ES5 pour retirer les accents
+  return str
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire les accents
+    .replace(/[^\w\s]/gi, '') // retire la ponctuation
+    .trim()
+    .replace(/\s+/g, '_')
+    .toLowerCase();
+}
+
 const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
   label,
   value,
@@ -36,12 +49,14 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
   margin = 'normal',
   fullWidth = true,
   disabled = false,
+  language = 'fr',
 }) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
   const anchorEl = useRef<HTMLDivElement>(null);
+  const [inputValue, setInputValue] = useState('');
 
   // Fonction de filtrage avec limitation à 20 résultats
   const filterSuggestions = useCallback((input: string) => {
@@ -62,10 +77,14 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
 
   const debouncedFilter = useDebounce(filterSuggestions, 200);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-    debouncedFilter(newValue);
+  useEffect(() => {
+    // Synchronise inputValue avec la clé courante
+    setInputValue(value);
+  }, [value]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    debouncedFilter(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -109,14 +128,31 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
     <div ref={anchorEl}>
       <TextField
         label={label}
-        value={value}
-        onChange={handleChange}
+        value={inputValue}
+        onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         margin={margin}
         fullWidth={fullWidth}
         disabled={disabled}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        InputProps={{
+          endAdornment: (
+            <IconButton
+              aria-label="Créer la clé"
+              onClick={() => {
+                const newKey = toSnakeCase(inputValue);
+                onChange(newKey);
+                setShowSuggestions(false);
+              }}
+              edge="end"
+              size="small"
+              disabled={suggestions.length > 0 || !inputValue}
+            >
+              <AddIcon />
+            </IconButton>
+          )
+        }}
       />
       <Popper
         open={isFocused && showSuggestions && suggestions.length > 0}
@@ -157,18 +193,47 @@ const TranslationKeyField: React.FC<TranslationKeyFieldProps> = ({
               </ListItem>
             ))}
           </List>
+          {/* Bouton Créer la clé si aucune suggestion */}
+          {inputValue && suggestions.length === 0 && (
+            <Box sx={{ p: 1, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Aucune clé trouvée
+              </Typography>
+              <Box
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  borderRadius: 1,
+                  px: 2,
+                  py: 1,
+                  cursor: 'pointer',
+                  display: 'inline-block',
+                  fontWeight: 'bold',
+                  '&:hover': { bgcolor: 'primary.dark' }
+                }}
+                onClick={() => {
+                  const newKey = toSnakeCase(inputValue);
+                  onChange(newKey);
+                  setShowSuggestions(false);
+                }}
+              >
+                Créer la clé « {toSnakeCase(inputValue)} »
+              </Box>
+            </Box>
+          )}
         </Paper>
       </Popper>
-      {value && !(isFocused && showSuggestions && suggestions.length > 0) && (
+      {/* Affichage des traductions dans les deux langues */}
+      {value && (
         <>
           {translationsFr[value] && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, maxWidth: '100%' }}>
-              fr: {translationsFr[value].length > 300 ? translationsFr[value].slice(0, 300) + '...' : translationsFr[value]}
+              FR : {translationsFr[value].length > 300 ? translationsFr[value].slice(0, 300) + '...' : translationsFr[value]}
             </Typography>
           )}
           {translationsEn[value] && (
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, maxWidth: '100%' }}>
-              en: {translationsEn[value].length > 300 ? translationsEn[value].slice(0, 300) + '...' : translationsEn[value]}
+              EN : {translationsEn[value].length > 300 ? translationsEn[value].slice(0, 300) + '...' : translationsEn[value]}
             </Typography>
           )}
         </>

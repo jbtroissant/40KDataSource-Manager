@@ -1,5 +1,12 @@
 import { Enhancement } from './detachment';
 
+export interface DamagedProfile {
+  description: string;
+  range: string;
+  showDamagedAbility: boolean;
+  showDescription: boolean;
+}
+
 export interface Datasheet {
   id: string;
   name: string;
@@ -15,12 +22,7 @@ export interface Datasheet {
   factionKeywords: string[];
   abilities: {
     core: string[];
-    damaged?: {
-      range: string;
-      description: string;
-      showDamagedAbility: boolean;
-      showDescription: boolean;
-    };
+    damaged?: DamagedProfile;
     faction: string[];
     invul?: {
       info: string;
@@ -124,6 +126,7 @@ export interface Datasheet {
     units: string[];
     extra?: string;
   };
+  damaged?: DamagedProfile;
 } 
 
 export interface LinkedUnit extends Datasheet {
@@ -232,7 +235,8 @@ export const createLinkedUnit = (units: Datasheet[]): LinkedUnit => {
     linkedUnits: [], // Ne plus stocker les unités liées ici
     isLinked: true,
     isCombinedUnit: true,
-    leads: units[0].leads
+    leads: units[0].leads,
+    damaged: units[0].damaged
   };
 
   return linkedUnit;

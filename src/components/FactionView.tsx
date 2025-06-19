@@ -14,6 +14,7 @@ import AppLayout from './AppLayout';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { useDatasource } from '../contexts/DatasourceContext';
 
 const FactionView: React.FC = () => {
   const [selectedDatasheet, setSelectedDatasheet] = useState<Datasheet | null>(null);
@@ -31,23 +32,61 @@ const FactionView: React.FC = () => {
   const navigate = useNavigate();
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [keysToRemove, setKeysToRemove] = useState<string[]>([]);
+  const [translationDataToRemove, setTranslationDataToRemove] = useState<Record<string, string>>({});
+  const [keyReplacements, setKeyReplacements] = useState<Record<string, string>>({});
+  const [keyUsageLocations, setKeyUsageLocations] = useState<Record<string, string[]>>({});
+  const [standardKeywordsToRemove, setStandardKeywordsToRemove] = useState<string[]>([]);
+  const { datasource: contextDatasource, reloadDatasource, forceReloadDatasource } = useDatasource();
 
+  // Liste des mots-clés standards à supprimer automatiquement
+  const STANDARD_KEYWORDS_TO_REMOVE = [
+    'Fly', 'Vehicle', 'Mounted', 'Grenades', 'Infantry', 'Character', 'Epic Hero', 
+    'Psyker', 'Psychic', 'Precision', 'Lethal Hits', 'Aircraft', 'Twin-linked', 
+    'Hover', 'Monster', 'Primarch', 'Walker', 'Battleline', 'Smoke', 'Titan', 
+    'Titanic', 'Transport', 'Leader', 'Lone Operative', 'Stealth', 'Deadly Demise', 
+    'Feel No Pain', 'Fights First', 'Deep Strike', 'Scouts', 'Firing Deck', 'Pistol',
+    'Hazardous', 'Blast', 'Torrent', 'Ignores Cover', 'Heavy', 'Extra Attacks', 
+    'Assault', 'Devastating Wounds', 'One Shot'
+  ];
+
+  // Mots-clés qui peuvent avoir une valeur (à supprimer avec toutes leurs variantes)
+  const KEYWORDS_WITH_VALUE = ['Anti-', 'Sustained Hits', 'Rapid Fire', 'Melta', 'Feel No Pain', 'Scouts', 'Deadly Demise', 'Firing Deck'];
+
+  // Restaurer la datasheet sélectionnée depuis le localStorage si elle existe
   React.useEffect(() => {
-    const loadFactionData = async () => {
-      const datasource = await loadDatasource();
-      if (datasource && factionId) {
-        const factionData = datasource[`${factionId}_translated`];
-        if (factionData) {
-          setFactionName(factionData.name);
-          setFactionIconUrl(`https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/dc/${factionId}.svg`);
+    if (factionId) {
+      const savedDatasheetId = localStorage.getItem(`selectedDatasheet_${factionId}`);
+      if (savedDatasheetId && contextDatasource) {
+        const factionData = contextDatasource[`${factionId}_translated`];
+        if (factionData?.datasheets) {
+          const datasheet = factionData.datasheets.find((ds: Datasheet) => ds.id === savedDatasheetId);
+          if (datasheet) {
+            setSelectedDatasheet(datasheet);
+          }
         }
       }
-    };
-    loadFactionData();
-  }, [factionId]);
+    }
+  }, [factionId, contextDatasource]);
 
+  // Charger les données de la faction (nom et icône)
+  React.useEffect(() => {
+    if (contextDatasource && factionId) {
+      const factionData = contextDatasource[`${factionId}_translated`];
+      if (factionData) {
+        // Utilise la traduction du nom de la faction si possible
+        const displayName = translate(factionData.name, factionId) || factionData.name || factionId;
+        setFactionName(displayName);
+        setFactionIconUrl(`https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/dc/${factionId}.svg`);
+      }
+    }
+  }, [factionId, contextDatasource]);
+
+  // Sauvegarder la datasheet sélectionnée dans le localStorage
   const handleDatasheetSelect = (datasheet: Datasheet) => {
     setSelectedDatasheet(datasheet);
+    if (factionId) {
+      localStorage.setItem(`selectedDatasheet_${factionId}`, datasheet.id);
+    }
   };
 
   const handleAddDatasheet = (datasheet: Datasheet) => {
@@ -62,12 +101,17 @@ const FactionView: React.FC = () => {
   // Fonction appelée après suppression d'une datasheet
   const handleDatasheetDeleted = () => {
     setSelectedDatasheet(null);
+    if (factionId) {
+      localStorage.removeItem(`selectedDatasheet_${factionId}`);
+    }
     setRefreshKey(k => k + 1);
   };
 
-  // Bouton retour
+  // Bouton retour - naviguer vers la homepage
   const leftAction = (
-    <IconButton onClick={() => navigate('/')}>
+    <IconButton onClick={() => {
+      navigate('/');
+    }}>
       <ArrowBackIcon />
     </IconButton>
   );
@@ -111,6 +155,27 @@ const FactionView: React.FC = () => {
     return false;
   }
 
+  // Fonction pour trouver toutes les occurrences d'une clé dans un objet
+  const findKeyUsageLocations = (obj: any, searchKey: string, path: string = ''): string[] => {
+    const locations: string[] = [];
+    
+    if (typeof obj === 'string' && obj === searchKey) {
+      locations.push(path || 'racine');
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item, index) => {
+        const newPath = path ? `${path}[${index}]` : `[${index}]`;
+        locations.push(...findKeyUsageLocations(item, searchKey, newPath));
+      });
+    } else if (typeof obj === 'object' && obj !== null) {
+      Object.entries(obj).forEach(([key, value]) => {
+        const newPath = path ? `${path}.${key}` : key;
+        locations.push(...findKeyUsageLocations(value, searchKey, newPath));
+      });
+    }
+    
+    return locations;
+  };
+
   const handleCleanup = async () => {
     if (!factionId) return;
     const datasource = await loadDatasource();
@@ -127,16 +192,106 @@ const FactionView: React.FC = () => {
     if (!flatDataRef) return;
 
     const keysToRemove: string[] = [];
+    const translationDataToRemove: Record<string, string> = {};
+    const keyReplacements: Record<string, string> = {};
+    const keyUsageLocations: Record<string, string[]> = {};
+    const standardKeywordsToRemove: string[] = [];
+    
+    // 1. Détecter les clés inutilisées
     Object.keys(flatDataRef).forEach(key => {
       if (!isKeyUsedInTranslated(translatedData, key)) {
         keysToRemove.push(key);
+        translationDataToRemove[key] = flatDataRef[key];
+        keyUsageLocations[key] = [];
       }
     });
 
+    // 2. Détecter les traductions en double (clés avec la même valeur)
+    const valueToKeys: Record<string, string[]> = {};
+    Object.entries(flatDataRef).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        if (!valueToKeys[value]) {
+          valueToKeys[value] = [];
+        }
+        valueToKeys[value].push(key);
+      }
+    });
+
+    // Pour chaque valeur, garder la clé la plus courte et supprimer les doublons
+    Object.entries(valueToKeys).forEach(([value, keys]) => {
+      if (keys.length > 1) {
+        // Trier les clés par longueur (la plus courte en premier)
+        const sortedKeys = keys.sort((a, b) => a.length - b.length);
+        // Garder la clé la plus courte, supprimer les autres (plus longues)
+        const keyToKeep = sortedKeys[0];
+        const duplicatesToRemove = sortedKeys.slice(1);
+        duplicatesToRemove.forEach(duplicateKey => {
+          if (!keysToRemove.includes(duplicateKey)) {
+            keysToRemove.push(duplicateKey);
+            translationDataToRemove[duplicateKey] = flatDataRef[duplicateKey];
+            // Stocker la correspondance pour le remplacement
+            keyReplacements[duplicateKey] = keyToKeep;
+            // Trouver où cette clé est utilisée dans le fichier traduit
+            keyUsageLocations[duplicateKey] = findKeyUsageLocations(translatedData, duplicateKey);
+          }
+        });
+      }
+    });
+
+    // 3. Détecter les mots-clés standards (supprimés seulement des fichiers flat)
+    Object.keys(flatDataRef).forEach(key => {
+      // Vérifier si c'est un mot-clé standard exact
+      if (STANDARD_KEYWORDS_TO_REMOVE.includes(key)) {
+        if (!standardKeywordsToRemove.includes(key)) {
+          standardKeywordsToRemove.push(key);
+          translationDataToRemove[key] = flatDataRef[key];
+        }
+      }
+      
+      // Vérifier si c'est un mot-clé avec valeur (commence par le mot-clé)
+      KEYWORDS_WITH_VALUE.forEach(keyword => {
+        if (key.startsWith(keyword) && key !== keyword) {
+          if (!standardKeywordsToRemove.includes(key)) {
+            standardKeywordsToRemove.push(key);
+            translationDataToRemove[key] = flatDataRef[key];
+          }
+        }
+      });
+    });
+
     setKeysToRemove(keysToRemove);
+    setTranslationDataToRemove(translationDataToRemove);
+    setKeyReplacements(keyReplacements);
+    setKeyUsageLocations(keyUsageLocations);
+    setStandardKeywordsToRemove(standardKeywordsToRemove);
     setCleanupDialogOpen(true);
     // On stocke aussi les flatKeys pour la suite
     (window as any)._flatKeysToCleanup = flatKeys;
+  };
+
+  // Fonction récursive pour remplacer les clés dans un objet
+  const replaceKeysInObject = (obj: any, replacements: Record<string, string>): any => {
+    if (typeof obj === 'string') {
+      // Si c'est une chaîne qui correspond à une clé à remplacer
+      if (replacements[obj]) {
+        return replacements[obj];
+      }
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => replaceKeysInObject(item, replacements));
+    }
+    
+    if (typeof obj === 'object' && obj !== null) {
+      const newObj: any = {};
+      Object.entries(obj).forEach(([key, value]) => {
+        newObj[key] = replaceKeysInObject(value, replacements);
+      });
+      return newObj;
+    }
+    
+    return obj;
   };
 
   const handleConfirmCleanup = async () => {
@@ -145,18 +300,63 @@ const FactionView: React.FC = () => {
     // Récupérer les flatKeys stockées
     const flatKeys: string[] = (window as any)._flatKeysToCleanup || Object.keys(datasource).filter(key => key.startsWith(`${factionId}_flat_`));
 
+    // 1. Supprimer les clés des fichiers flat (clés normales + mots-clés standards)
     for (const flatKey of flatKeys) {
       const flatData = datasource[flatKey];
       if (!flatData) continue;
+      
+      // Supprimer les clés normales
       keysToRemove.forEach(key => {
         delete flatData[key];
       });
+      
+      // Supprimer les mots-clés standards
+      standardKeywordsToRemove.forEach(key => {
+        delete flatData[key];
+      });
+      
       await saveDatasourceBloc(flatKey, flatData);
     }
 
+    // 2. Remplacer les références dans le fichier traduit (seulement pour les clés normales, pas les mots-clés standards)
+    const translatedData = datasource[`${factionId}_translated`];
+    if (translatedData) {
+      const updatedTranslatedData = replaceKeysInObject(translatedData, keyReplacements);
+      await saveDatasourceBloc(`${factionId}_translated`, updatedTranslatedData);
+    }
+
+    // 3. Recharger les données dans le contexte avec un délai pour s'assurer que les fichiers sont bien écrits
+    setTimeout(async () => {
+      await forceReloadDatasource();
+      
+      // Double vérification après un court délai
+      setTimeout(async () => {
+        await forceReloadDatasource();
+        
+        // Vérification finale - recharger les données de la faction
+        const updatedDatasource = await loadDatasource();
+        if (updatedDatasource && factionId) {
+          const factionData = updatedDatasource[`${factionId}_translated`];
+          if (factionData) {
+            setFactionName(factionData.name);
+            setFactionIconUrl(`https://raw.githubusercontent.com/ronplanken/40k-Data-Card/master/src/dc/${factionId}.svg`);
+          }
+        }
+      }, 200);
+    }, 300);
+
     setCleanupDialogOpen(false);
     setKeysToRemove([]);
-    setRefreshKey(k => k + 1); // Pour rafraîchir la liste
+    setTranslationDataToRemove({});
+    setKeyReplacements({});
+    setKeyUsageLocations({});
+    setStandardKeywordsToRemove([]);
+    
+    // Forcer plusieurs re-rendus pour s'assurer que tout se met à jour
+    setRefreshKey(k => k + 1);
+    setTimeout(() => setRefreshKey(k => k + 1), 100);
+    setTimeout(() => setRefreshKey(k => k + 1), 500);
+    setTimeout(() => setRefreshKey(k => k + 1), 1000);
   };
 
   const rightAction = (
@@ -330,6 +530,10 @@ const FactionView: React.FC = () => {
           open={cleanupDialogOpen}
           onClose={() => setCleanupDialogOpen(false)}
           keysToRemove={keysToRemove}
+          translationData={translationDataToRemove}
+          keyReplacements={keyReplacements}
+          keyUsageLocations={keyUsageLocations}
+          standardKeywordsToRemove={standardKeywordsToRemove}
           onConfirm={handleConfirmCleanup}
         />
       </Box>

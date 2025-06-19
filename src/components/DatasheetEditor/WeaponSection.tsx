@@ -1,7 +1,24 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Button, Switch, FormControlLabel, TextField, Checkbox } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Button, 
+  Switch, 
+  FormControlLabel, 
+  TextField, 
+  Checkbox,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  IconButton,
+  Tooltip,
+  Stack
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import TranslationKeyField from './TranslationKeyField';
 import { useDatasource } from '../../contexts/DatasourceContext';
 
@@ -82,6 +99,12 @@ const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, 
     onChange(newWeapons);
   };
 
+  const duplicateWeapon = (index: number) => {
+    const weaponToDuplicate = weapons[index];
+    const newWeapon = JSON.parse(JSON.stringify(weaponToDuplicate)); // Deep clone
+    onChange([...weapons, newWeapon]);
+  };
+
   const addProfile = (weaponIndex: number) => {
     const newProfile: WeaponProfile = {
       active: true,
@@ -118,6 +141,154 @@ const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, 
     setSearchDialogOpen({ open: true, weaponIndex, profileIndex });
   };
 
+  const renderProfile = (weapon: Weapon, weaponIndex: number, profile: WeaponProfile, profileIndex: number) => (
+    <Card 
+      key={profileIndex} 
+      variant="outlined" 
+      sx={{ 
+        mb: 2,
+        backgroundColor: profile.active ? 'background.paper' : 'action.disabledBackground'
+      }}
+    >
+      <CardContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {/* En-tête du profil */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ flex: 1 }}>
+              <TranslationKeyField
+                label="Nom"
+                value={profile.name}
+                onChange={val => handleProfileChange(weaponIndex, profileIndex, 'name', val)}
+                onSearchClick={() => openSearch(weaponIndex, profileIndex)}
+                translationsFr={datasource ? datasource[`${factionId}_flat_fr`] : {}}
+                translationsEn={datasource ? datasource[`${factionId}_flat_en`] : {}}
+                margin="none"
+                fullWidth
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={profile.active || false}
+                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'active', e.target.checked)}
+                  />
+                }
+                label="Actif"
+              />
+              <Tooltip title="Supprimer le profil">
+                <IconButton 
+                  size="small" 
+                  color="error"
+                  onClick={() => removeProfile(weaponIndex, profileIndex)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
+
+          {/* Caractéristiques du profil */}
+          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
+            <TextField
+              label="Portée"
+              value={profile.range}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'range', e.target.value)}
+              sx={{ width: 100 }}
+            />
+            <TextField
+              label="Attaques"
+              value={profile.attacks}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'attacks', e.target.value)}
+              sx={{ width: 100 }}
+            />
+            <TextField
+              label="Compétence"
+              value={profile.skill}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'skill', e.target.value)}
+              sx={{ width: 100 }}
+            />
+            <TextField
+              label="Force"
+              value={profile.strength}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'strength', e.target.value)}
+              sx={{ width: 100 }}
+            />
+            <TextField
+              label="PA"
+              value={profile.ap}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'ap', e.target.value)}
+              sx={{ width: 100 }}
+            />
+            <TextField
+              label="Dégâts"
+              value={profile.damage}
+              onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'damage', e.target.value)}
+              sx={{ width: 100 }}
+            />
+          </Stack>
+
+          {/* Mots-clés */}
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>Mots-clés</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              {WEAPON_KEYWORDS.map((keyword) => (
+                <FormControlLabel
+                  key={keyword}
+                  control={
+                    <Checkbox
+                      checked={profile.keywords.some(k => k.startsWith(keyword))}
+                      onChange={(e) => {
+                        const newKeywords = [...profile.keywords];
+                        if (e.target.checked) {
+                          if (KEYWORDS_WITH_VALUE.includes(keyword)) {
+                            newKeywords.push(`${keyword}${keyword === 'Anti-' ? 'X' : ' X'}`);
+                          } else {
+                            newKeywords.push(keyword);
+                          }
+                        } else {
+                          const index = newKeywords.findIndex(k => k.startsWith(keyword));
+                          if (index !== -1) {
+                            newKeywords.splice(index, 1);
+                          }
+                        }
+                        handleProfileChange(weaponIndex, profileIndex, 'keywords', newKeywords);
+                      }}
+                      size="small"
+                    />
+                  }
+                  label={keyword}
+                />
+              ))}
+            </Box>
+            {/* Champs pour les mots-clés avec valeur */}
+            <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
+              {KEYWORDS_WITH_VALUE.map((keyword) =>
+                profile.keywords.some(k => k.startsWith(keyword)) && (
+                  <TextField
+                    key={keyword}
+                    size="small"
+                    label={`Valeur pour ${keyword}`}
+                    value={profile.keywords.find(k => k.startsWith(keyword))?.replace(keyword, '').trim() || ''}
+                    onChange={(e) => {
+                      const newKeywords = [...profile.keywords];
+                      const index = newKeywords.findIndex(k => k.startsWith(keyword));
+                      if (index !== -1) {
+                        newKeywords[index] = `${keyword}${keyword === 'Anti-' ? '' : ' '}${e.target.value.trim()}`;
+                        handleProfileChange(weaponIndex, profileIndex, 'keywords', newKeywords);
+                      }
+                    }}
+                    sx={{ width: 150 }}
+                  />
+                )
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Paper sx={{ p: 2, mt: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -126,176 +297,73 @@ const WeaponSection: React.FC<WeaponSectionProps> = ({ weapons, onChange, type, 
           Ajouter une arme
         </Button>
       </Box>
-      {weapons.map((weapon, weaponIndex) => (
-        <Box key={weaponIndex} sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={weapon.active}
-                  onChange={(e) => {
-                    const newWeapons = [...weapons];
-                    newWeapons[weaponIndex] = { ...weapon, active: e.target.checked };
-                    onChange(newWeapons);
-                  }}
-                />
-              }
-              label="Actif"
-            />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button startIcon={<AddIcon />} onClick={() => addProfile(weaponIndex)} variant="contained" size="small">
-                Ajouter un profil
-              </Button>
-              <Button startIcon={<DeleteIcon />} onClick={() => removeWeapon(weaponIndex)} color="error" variant="contained" size="small">
-                Supprimer l'arme
-              </Button>
-            </Box>
-          </Box>
-          {weapon.profiles.map((profile, profileIndex) => (
-            <Box key={profileIndex} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                <Box sx={{ flex: '1 1 100%', mb: 2, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                  <Box sx={{ flex: 1, minWidth: 200 }}>
-                    <TranslationKeyField
-                      label="Nom"
-                      value={profile.name}
-                      onChange={val => handleProfileChange(weaponIndex, profileIndex, 'name', val)}
-                      onSearchClick={() => openSearch(weaponIndex, profileIndex)}
-                      translationsFr={datasource ? datasource[`${factionId}_flat_fr`] : {}}
-                      translationsEn={datasource ? datasource[`${factionId}_flat_en`] : {}}
-                      margin="normal"
-                      fullWidth
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, ml: 2 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={profile.active || false}
-                          onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'active', e.target.checked)}
-                        />
-                      }
-                      label="Profil actif"
-                      sx={{ mb: 1 }}
-                    />
-                    <Button
-                      startIcon={<DeleteIcon />}
-                      onClick={() => removeProfile(weaponIndex, profileIndex)}
-                      color="error"
-                      variant="contained"
+
+      <Stack spacing={3}>
+        {weapons.map((weapon, weaponIndex) => (
+          <Card key={weaponIndex} variant="outlined">
+            <CardHeader
+              action={
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={weapon.active}
+                        onChange={(e) => {
+                          const newWeapons = [...weapons];
+                          newWeapons[weaponIndex] = { ...weapon, active: e.target.checked };
+                          onChange(newWeapons);
+                        }}
+                      />
+                    }
+                    label="Actif"
+                  />
+                  <Button 
+                    startIcon={<AddIcon />} 
+                    onClick={() => addProfile(weaponIndex)} 
+                    variant="outlined" 
+                    size="small"
+                  >
+                    Ajouter un profil
+                  </Button>
+                  <Tooltip title="Dupliquer l'arme">
+                    <IconButton 
+                      onClick={() => duplicateWeapon(weaponIndex)}
                       size="small"
                     >
-                      Supprimer le profil
-                    </Button>
-                  </Box>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Supprimer l'arme">
+                    <IconButton 
+                      onClick={() => removeWeapon(weaponIndex)}
+                      color="error"
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="Portée"
-                    value={profile.range}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'range', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="Attaques"
-                    value={profile.attacks}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'attacks', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="Compétence"
-                    value={profile.skill}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'skill', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="Force"
-                    value={profile.strength}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'strength', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="PA"
-                    value={profile.ap}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'ap', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 15%', minWidth: 100 }}>
-                  <TextField
-                    fullWidth
-                    label="Dégâts"
-                    value={profile.damage}
-                    onChange={(e) => handleProfileChange(weaponIndex, profileIndex, 'damage', e.target.value)}
-                  />
-                </Box>
-                <Box sx={{ flex: '1 1 100%', mt: 2 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Mots-clés</Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                    {WEAPON_KEYWORDS.map((keyword) => (
-                      <FormControlLabel
-                        key={keyword}
-                        control={
-                          <Checkbox
-                            checked={profile.keywords.some(k => k.startsWith(keyword))}
-                            onChange={(e) => {
-                              const keywords = [...profile.keywords];
-                              if (e.target.checked) {
-                                if (KEYWORDS_WITH_VALUE.includes(keyword)) {
-                                  keywords.push(`${keyword}${keyword === 'Anti-' ? 'X' : ' X'}`);
-                                } else {
-                                  keywords.push(keyword);
-                                }
-                              } else {
-                                const index = keywords.findIndex(k => k.startsWith(keyword));
-                                if (index !== -1) {
-                                  keywords.splice(index, 1);
-                                }
-                              }
-                              handleProfileChange(weaponIndex, profileIndex, 'keywords', keywords);
-                            }}
-                            size="small"
-                          />
-                        }
-                        label={keyword}
-                      />
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap' }}>
-                    {KEYWORDS_WITH_VALUE.map((keyword) =>
-                      profile.keywords.some(k => k.startsWith(keyword)) && (
-                        <TextField
-                          key={keyword}
-                          size="small"
-                          label={`Valeur pour ${keyword}`}
-                          value={profile.keywords.find(k => k.startsWith(keyword))?.replace(keyword, '').trim() || ''}
-                          onChange={(e) => {
-                            const keywords = [...profile.keywords];
-                            const index = keywords.findIndex(k => k.startsWith(keyword));
-                            if (index !== -1) {
-                              keywords[index] = `${keyword}${keyword === 'Anti-' ? '' : ' '}${e.target.value.trim()}`;
-                              handleProfileChange(weaponIndex, profileIndex, 'keywords', keywords);
-                            }
-                          }}
-                          sx={{ width: 150 }}
-                        />
-                      )
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-          ))}
-        </Box>
-      ))}
+              }
+              title={`Arme ${weaponIndex + 1}`}
+              sx={{
+                backgroundColor: weapon.active ? 'action.hover' : 'action.disabledBackground',
+                color: weapon.active ? 'text.primary' : 'text.primary',
+                '& .MuiCardHeader-action': {
+                  alignSelf: 'center',
+                  marginTop: 0
+                }
+              }}
+            />
+            <CardContent>
+              <Stack spacing={2}>
+                {weapon.profiles.map((profile, profileIndex) => 
+                  renderProfile(weapon, weaponIndex, profile, profileIndex)
+                )}
+              </Stack>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
     </Paper>
   );
 };

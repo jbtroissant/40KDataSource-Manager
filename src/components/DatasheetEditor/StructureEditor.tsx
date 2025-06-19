@@ -53,10 +53,13 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
   const sections = [
     { id: 'basic', label: 'Informations de base' },
     { id: 'faction-ability', label: 'Capacité de faction' },
+    { id: 'core-abilities', label: 'Capacités de base' },
+    { id: 'leader', label: 'Meneur' },
     { id: 'other-abilities', label: 'Autres capacités' },
     { id: 'special-abilities', label: 'Capacités spéciales' },
     { id: 'wargear-abilities', label: 'Capacités d\'équipement' },
     { id: 'primarch-abilities', label: 'Capacités primarch' },
+    { id: 'damaged', label: 'Profil dégressif' },
     { id: 'points', label: 'Points' },
     { id: 'stats', label: 'Statistiques' },
     { id: 'melee-weapons', label: 'Armes de mêlée' },
@@ -81,29 +84,33 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
       {/* Navigation latérale */}
       <Paper sx={{ 
         width: 200, 
-        p: 1, 
-        mr: 1, 
+        p: 1,
         position: 'sticky', 
-        top: 0, 
-        height: 'fit-content', 
-        maxHeight: 'calc(100vh - 32px)', 
-        overflow: 'auto',
-        flexShrink: 0
+        top: 0,
+        height: 'fit-content',
+        maxHeight: '100vh',
+        overflowY: 'auto',
+        flexShrink: 0,
+        zIndex: 1,
+        borderRadius: 0
       }}>
-        <Typography variant="subtitle1" sx={{ mb: 1, px: 1 }}>Navigation</Typography>
         <List dense>
           {sections.map((section) => (
             <ListItem key={section.id} disablePadding>
               <ListItemButton
                 selected={activeSection === section.id}
                 onClick={() => scrollToSection(section.id)}
-                sx={{ py: 0.5 }}
+                sx={{ 
+                  py: 0.25,
+                  minHeight: 32
+                }}
               >
                 <ListItemText 
                   primary={section.label} 
                   primaryTypographyProps={{ 
                     variant: 'body2',
-                    noWrap: true
+                    noWrap: true,
+                    fontSize: '0.8rem'
                   }}
                 />
               </ListItemButton>
@@ -172,11 +179,75 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
 
           {/* Capacité de faction */}
           <Paper id="faction-ability" sx={{ p: 2, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="h6" sx={{ flex: 1 }} gutterBottom>
-                Capacités de base
-              </Typography>
-            </Box>
+            <Typography variant="h6" gutterBottom>
+              Capacité de faction
+            </Typography>
+            {(datasheet.abilities.faction || []).map((factionAbility, idx) => (
+              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box sx={{ flex: 1, minWidth: 200 }}>
+                  <TranslationKeyField
+                    label={`Capacité de faction ${idx + 1}`}
+                    value={factionAbility}
+                    onChange={val => {
+                      const newFactionAbilities = [...datasheet.abilities.faction];
+                      newFactionAbilities[idx] = val;
+                      onChange({
+                        ...datasheet,
+                        abilities: {
+                          ...datasheet.abilities,
+                          faction: newFactionAbilities
+                        }
+                      });
+                    }}
+                    onSearchClick={() => setSearchDialogOpen({ open: true, field: 'abilities.faction', index: idx })}
+                    translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                    translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                    margin="dense"
+                    fullWidth
+                  />
+                </Box>
+                <IconButton
+                  color="error"
+                  onClick={() => {
+                    const newFactionAbilities = [...datasheet.abilities.faction];
+                    newFactionAbilities.splice(idx, 1);
+                    onChange({
+                      ...datasheet,
+                      abilities: {
+                        ...datasheet.abilities,
+                        faction: newFactionAbilities
+                      }
+                    });
+                  }}
+                  size="small"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            ))}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                onChange({
+                  ...datasheet,
+                  abilities: {
+                    ...datasheet.abilities,
+                    faction: [...(datasheet.abilities.faction || []), '']
+                  }
+                });
+              }}
+              disabled={datasheet.abilities.faction?.some(f => !f)}
+            >
+              Ajouter une capacité de faction
+            </Button>
+          </Paper>
+
+          {/* Capacités de base */}
+          <Paper id="core-abilities" sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Capacités de base
+            </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
               {CORE_ABILITIES.map((ability) => (
                 <FormControlLabel
@@ -198,9 +269,12 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                             core.splice(index, 1);
                           }
                         }
-                        handleChange('abilities', {
-                          ...datasheet.abilities,
-                          core
+                        onChange({
+                          ...datasheet,
+                          abilities: {
+                            ...datasheet.abilities,
+                            core
+                          }
                         });
                       }}
                       size="small"
@@ -223,9 +297,12 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                       const index = core.findIndex(a => a.startsWith(ability));
                       if (index !== -1) {
                         core[index] = `${ability} ${e.target.value.trim()}`;
-                        handleChange('abilities', {
-                          ...datasheet.abilities,
-                          core
+                        onChange({
+                          ...datasheet,
+                          abilities: {
+                            ...datasheet.abilities,
+                            core
+                          }
                         });
                       }
                     }}
@@ -233,6 +310,30 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                   />
                 )
               )}
+            </Box>
+          </Paper>
+
+          {/* Section Meneur (leader) */}
+          <Paper id="leader" sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Meneur
+            </Typography>
+            <Box sx={{ flex: 1, minWidth: 200 }}>
+              <TranslationKeyField
+                label="Meneur"
+                value={datasheet.leader || ''}
+                onChange={val => {
+                  onChange({
+                    ...datasheet,
+                    leader: val
+                  });
+                }}
+                onSearchClick={() => setSearchDialogOpen({ open: true, field: 'leader' })}
+                translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                margin="dense"
+                fullWidth
+              />
             </Box>
           </Paper>
 
@@ -821,6 +922,111 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                 </Box>
               </Paper>
             ))}
+          </Paper>
+
+          {/* Capacité spéciale : profil dégressif (damaged) */}
+          <Paper id="damaged" sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Profil dégressif
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, width: '100%' }}>
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <TranslationKeyField
+                  label="Description"
+                  value={datasheet.abilities.damaged?.description || ''}
+                  onChange={val => {
+                    onChange({
+                      ...datasheet,
+                      abilities: {
+                        ...datasheet.abilities,
+                        damaged: {
+                          description: val,
+                          range: datasheet.abilities.damaged?.range ?? '',
+                          showDamagedAbility: datasheet.abilities.damaged?.showDamagedAbility ?? false,
+                          showDescription: datasheet.abilities.damaged?.showDescription ?? false,
+                        }
+                      }
+                    });
+                  }}
+                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'damaged.description' })}
+                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                  margin="normal"
+                  fullWidth
+                />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 200 }}>
+                <TranslationKeyField
+                  label="Plage (range)"
+                  value={datasheet.abilities.damaged?.range || ''}
+                  onChange={val => {
+                    onChange({
+                      ...datasheet,
+                      abilities: {
+                        ...datasheet.abilities,
+                        damaged: {
+                          description: datasheet.abilities.damaged?.description ?? '',
+                          range: val,
+                          showDamagedAbility: datasheet.abilities.damaged?.showDamagedAbility ?? false,
+                          showDescription: datasheet.abilities.damaged?.showDescription ?? false,
+                        }
+                      }
+                    });
+                  }}
+                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'damaged.range' })}
+                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
+                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
+                  margin="normal"
+                  fullWidth
+                />
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mt: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={datasheet.abilities.damaged?.showDamagedAbility ?? false}
+                    onChange={e => {
+                      onChange({
+                        ...datasheet,
+                        abilities: {
+                          ...datasheet.abilities,
+                          damaged: {
+                            description: datasheet.abilities.damaged?.description ?? '',
+                            range: datasheet.abilities.damaged?.range ?? '',
+                            showDamagedAbility: e.target.checked,
+                            showDescription: datasheet.abilities.damaged?.showDescription ?? false,
+                          }
+                        }
+                      });
+                    }}
+                  />
+                }
+                label="Afficher la capacité"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={datasheet.abilities.damaged?.showDescription ?? false}
+                    onChange={e => {
+                      onChange({
+                        ...datasheet,
+                        abilities: {
+                          ...datasheet.abilities,
+                          damaged: {
+                            description: datasheet.abilities.damaged?.description ?? '',
+                            range: datasheet.abilities.damaged?.range ?? '',
+                            showDamagedAbility: datasheet.abilities.damaged?.showDamagedAbility ?? false,
+                            showDescription: e.target.checked,
+                          }
+                        }
+                      });
+                    }}
+                  />
+                }
+                label="Afficher la description"
+              />
+            </Box>
           </Paper>
 
           {/* Points */}
@@ -1528,27 +1734,6 @@ const StructureEditor: React.FC<StructureEditorProps> = ({ datasheet, onChange }
                 </IconButton>
               </Box>
             ))}
-          </Paper>
-
-          {/* Transport */}
-          <Paper id="transport" sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Transport
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-              <Box sx={{ flex: '1 1 100%', minWidth: 200 }}>
-                <TranslationKeyField
-                  label="Capacité de transport"
-                  value={datasheet.transport || ''}
-                  onChange={val => handleChange('transport', val)}
-                  onSearchClick={() => setSearchDialogOpen({ open: true, field: 'transport' })}
-                  translationsFr={datasource ? datasource[`${datasheet.faction_id}_flat_fr`] : {}}
-                  translationsEn={datasource ? datasource[`${datasheet.faction_id}_flat_en`] : {}}
-                  margin="normal"
-                  fullWidth
-                />
-              </Box>
-            </Box>
           </Paper>
         </Box>
       </Box>

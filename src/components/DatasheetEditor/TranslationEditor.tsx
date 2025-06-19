@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, TextField, Typography, Paper } from '@mui/material';
 import { Datasheet } from '../../types/datasheet';
-import { useTranslate } from '../../services/translationService';
+import { translateWithLang } from '../../services/translationService';
 import { useDatasource } from '../../contexts/DatasourceContext';
 
 // Liste des mots-clés standards
@@ -27,7 +27,6 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
 }) => {
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const { datasource } = useDatasource();
-  const translate = useTranslate();
 
   useEffect(() => {
     if (!datasource) return;
@@ -37,6 +36,7 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     if (datasheet.name) allKeys.push(datasheet.name);
     if (datasheet.fluff) allKeys.push(datasheet.fluff);
     if (datasheet.loadout) allKeys.push(datasheet.loadout);
+    if (datasheet.leader) allKeys.push(datasheet.leader);
     if (datasheet.transport) allKeys.push(datasheet.transport);
     datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
     datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
@@ -59,6 +59,11 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
         if (sub.description) allKeys.push(sub.description);
       });
     });
+    // Ajout des champs de la capacité 'damaged'
+    if (datasheet.damaged) {
+      if (datasheet.damaged.description) allKeys.push(datasheet.damaged.description);
+      if (datasheet.damaged.range) allKeys.push(datasheet.damaged.range);
+    }
     datasheet.stats.forEach((stat) => stat.name && allKeys.push(stat.name));
     datasheet.meleeWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
     datasheet.rangedWeapons.forEach((weapon) => weapon.profiles.forEach((profile) => profile.name && allKeys.push(profile.name)));
@@ -77,7 +82,7 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     // Génère l'objet des traductions attendues
     const expectedTranslations: Record<string, string> = {};
     allKeys.forEach(key => {
-      expectedTranslations[key] = translate(key, factionId);
+      expectedTranslations[key] = translateWithLang(datasource, key, factionId, language);
     });
 
     // Test d'égalité profonde (clés et valeurs)
@@ -114,6 +119,7 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               if (datasheet.name) allKeys.push(datasheet.name);
               if (datasheet.fluff) allKeys.push(datasheet.fluff);
               if (datasheet.loadout) allKeys.push(datasheet.loadout);
+              if (datasheet.leader) allKeys.push(datasheet.leader);
               if (datasheet.transport) allKeys.push(datasheet.transport);
               datasheet.wargear.forEach((wargear) => allKeys.push(wargear));
               datasheet.abilities.faction.forEach((ability) => allKeys.push(ability));
@@ -139,6 +145,11 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
                   if (sub.description) allKeys.push(sub.description);
                 });
               });
+              // Ajout des champs de la capacité 'damaged'
+              if (datasheet.damaged) {
+                if (datasheet.damaged.description) allKeys.push(datasheet.damaged.description);
+                if (datasheet.damaged.range) allKeys.push(datasheet.damaged.range);
+              }
               datasheet.composition.forEach((entry) => {
                 if (entry) allKeys.push(entry);
               });
@@ -165,9 +176,17 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
                   <TextField
                     key={`translation-key-${key}`}
                     fullWidth
+                    multiline
+                    minRows={1}
+                    maxRows={5}
                     label={`${key}${count > 1 ? ` (utilisé ${count} fois)` : ''}`}
                     value={translations[key] || ''}
                     onChange={(e) => handleTranslationChange(key, e.target.value)}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        minHeight: '56px'
+                      }
+                    }}
                   />
                 );
               });
