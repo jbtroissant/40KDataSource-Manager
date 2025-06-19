@@ -67,6 +67,12 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
     (datasheet.keywords || []).filter(k => !CORE_KEYWORDS.some(ck => k.startsWith(ck))).forEach(keyword => allKeys.push(keyword));
     // Ajout des mots-clés de faction
     (datasheet.factions || []).forEach(faction => allKeys.push(faction));
+    // Ajout des propriétés leads et leadBy
+    if (datasheet.leads) {
+      datasheet.leads.units.forEach(unit => allKeys.push(unit));
+      if (datasheet.leads.extra) allKeys.push(datasheet.leads.extra);
+    }
+    (datasheet.leadBy || []).forEach(leader => allKeys.push(leader));
 
     // Génère l'objet des traductions attendues
     const expectedTranslations: Record<string, string> = {};
@@ -140,6 +146,12 @@ const TranslationEditor: React.FC<TranslationEditorProps> = ({
               (datasheet.keywords || []).filter(k => !CORE_KEYWORDS.some(ck => k.startsWith(ck))).forEach(keyword => allKeys.push(keyword));
               // Ajout des mots-clés de faction
               (datasheet.factions || []).forEach(faction => allKeys.push(faction));
+              // Ajout des propriétés leads et leadBy
+              if (datasheet.leads) {
+                datasheet.leads.units.forEach(unit => allKeys.push(unit));
+                if (datasheet.leads.extra) allKeys.push(datasheet.leads.extra);
+              }
+              (datasheet.leadBy || []).forEach(leader => allKeys.push(leader));
               // DEBUG : Affiche le mapping fr complet et la valeur pour une clé précise
               console.log('DEBUG mapping fr:', datasource && datasource[`${factionId}_flat_fr`]);
               console.log('DEBUG mapping fr pour datasheets.Lion_ElJonson.abilities.primarch.0.abilities.0.name:',

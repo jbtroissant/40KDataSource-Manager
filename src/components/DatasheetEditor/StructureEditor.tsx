@@ -10,7 +10,7 @@ import TranslationKeyField from './TranslationKeyField';
 
 // Liste des abilities core standards (à adapter si besoin)
 const CORE_ABILITIES = [
-  'Leader', 'Lone Operative', 'Stealth', 'Deadly Demise', 'Feel No Pain', 'Fights First', 'Deep Strike', 'Scouts',
+  'Leader', 'Lone Operative', 'Stealth', 'Deadly Demise', 'Feel No Pain', 'Fights First', 'Deep Strike', 'Scouts', 'Firing Deck',
 ];
 
 // Liste des mots-clés standards
@@ -22,7 +22,7 @@ const CORE_KEYWORDS = [
 ];
 
 // Mots-clés qui nécessitent une valeur
-const KEYWORDS_WITH_VALUE = ['Feel No Pain', 'Scouts', 'Deadly Demise', 'Anti-', 'Sustained Hits', 'Rapid Fire', 'Melta'];
+const KEYWORDS_WITH_VALUE = ['Feel No Pain', 'Scouts', 'Deadly Demise', 'Anti-', 'Sustained Hits', 'Rapid Fire', 'Melta', 'Firing Deck'];
 
 interface StructureEditorProps {
   datasheet: Datasheet;
