@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Box, TextField, FormControlLabel, Switch, Typography, Paper, Button, Checkbox, FormGroup, IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, TextField, FormControlLabel, Switch, Typography, Paper, Button, Checkbox, IconButton, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 import { Datasheet } from '../../types/datasheet';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,7 +10,7 @@ import TranslationKeyField from './TranslationKeyField';
 
 // Liste des abilities core standards (à adapter si besoin)
 const CORE_ABILITIES = [
-  'Leader', 'Lone Operative', 'Stealth', 'Deadly Demise', 'Feel No Pain', 'Fights First', 'Deep Strike', 'Scouts', 'Firing Deck',
+  'Leader', 'Lone Operative', 'Stealth', 'Deadly Demise', 'Feel No Pain', 'Fights First', 'Deep Strike', 'Scouts', 'Firing Deck','Infiltrators',
 ];
 
 // Liste des mots-clés standards
