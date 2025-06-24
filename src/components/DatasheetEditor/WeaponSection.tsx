@@ -65,7 +65,8 @@ const WEAPON_KEYWORDS = [
   'Rapid Fire',
   'Anti-',
   'Devastating Wounds',
-  'One Shot'
+  'One Shot',
+  'Indirect Fire',
 ];
 
 // Mots-clés qui nécessitent une valeur
