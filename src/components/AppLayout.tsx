@@ -174,7 +174,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title = 'Strategium', l
         
         // 1. Fichier traduit (racine)
         try {
-          const translatedResp = await fetch(`https://raw.githubusercontent.com/jbtroissant/40KDataSource/refs/heads/main/${key}.translated.json`, {
+          const translatedResp = await fetch(`https://raw.githubusercontent.com/jbtroissant/40KDataSource/refs/heads/main/structure/${key}.translated.json`, {
             ...(isIOS ? {
               credentials: 'omit',
               mode: 'cors'
